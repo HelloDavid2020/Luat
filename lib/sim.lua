@@ -1,9 +1,10 @@
---[[
-模块名称：sim卡功能
-模块功能：查询sim卡状态、iccid、imsi、mcc、mnc
-模块最后修改时间：2017.02.13
-]]
---定义模块,导入依赖库
+--- 模块功能：查询sim卡状态、iccid、imsi、mcc、mnc
+-- @module sim
+-- @author 小强、稀饭放姜
+-- @license MIT
+-- @copyright openLuat
+-- @release 2017.02.13
+--[[定义模块,导入依赖库]]
 local string = require "string"
 local ril = require "ril"
 local sys = require "sys"
@@ -19,57 +20,42 @@ local tostring = base.tostring
 --sim卡的imsi、sim卡的iccid
 local imsi, iccid, status
 
---[[
-函数名：geticcid
-功能  ：获取sim卡的iccid
-参数  ：无
-返回值：iccid，如果还没有读取出来，则返回nil
-注意：开机lua脚本运行之后，会发送at命令去查询iccid，所以需要一定时间才能获取到iccid。开机后立即调用此接口，基本上返回nil
-]]
+--- 获取sim卡的iccid
+-- @return string ,返回iccid，如果还没有读取出来，则返回nil
+-- @usage 注意：开机lua脚本运行之后，会发送at命令去查询iccid，所以需要一定时间才能获取到iccid。开机后立即调用此接口，基本上返回nil
+-- @usage sim.geticcid()
 function geticcid()
     return iccid
 end
 
---[[
-函数名：getimsi
-功能  ：获取sim卡的imsi
-参数  ：无
-返回值：imsi，如果还没有读取出来，则返回nil
-注意：开机lua脚本运行之后，会发送at命令去查询imsi，所以需要一定时间才能获取到imsi。开机后立即调用此接口，基本上返回nil
-]]
+--- 获取sim卡的imsi
+-- @return string ,返回imsi，如果还没有读取出来，则返回nil
+-- @usage 开机lua脚本运行之后，会发送at命令去查询imsi，所以需要一定时间才能获取到imsi。开机后立即调用此接口，基本上返回nil
+-- @usage sim.getimsi()
 function getimsi()
     return imsi
 end
 
---[[
-函数名：getmcc
-功能  ：获取sim卡的mcc
-参数  ：无
-返回值：mcc，如果还没有读取出来，则返回""
-注意：开机lua脚本运行之后，会发送at命令去查询imsi，所以需要一定时间才能获取到imsi。开机后立即调用此接口，基本上返回""
-]]
+--- 获取sim卡的mcc
+-- @return string ,返回值：mcc，如果还没有读取出来，则返回""
+-- @usage 注意：开机lua脚本运行之后，会发送at命令去查询imsi，所以需要一定时间才能获取到imsi。开机后立即调用此接口，基本上返回""
+-- @usage sim.getMcc()
 function getMcc()
     return (imsi ~= nil and imsi ~= "") and string.sub(imsi, 1, 3) or ""
 end
 
---[[
-函数名：getmnc
-功能  ：获取sim卡的getmnc
-参数  ：无
-返回值：mnc，如果还没有读取出来，则返回""
-注意：开机lua脚本运行之后，会发送at命令去查询imsi，所以需要一定时间才能获取到imsi。开机后立即调用此接口，基本上返回""
-]]
+--- 获取sim卡的getmnc
+-- @return string ,返回mnc，如果还没有读取出来，则返回""
+-- @usage   注意：开机lua脚本运行之后，会发送at命令去查询imsi，所以需要一定时间才能获取到imsi。开机后立即调用此接口，基本上返回""
+-- @usage sim.getMnc()
 function getMnc()
     return (imsi ~= nil and imsi ~= "") and string.sub(imsi, 4, 5) or ""
 end
 
---[[
-函数名：getstatus
-功能  ：获取sim卡的状态
-参数  ：无
-返回值：true表示sim卡正常，false或者nil表示未检测到卡或者卡异常
-注意：开机lua脚本运行之后，会发送at命令去查询状态，所以需要一定时间才能获取到状态。开机后立即调用此接口，基本上返回nil
-]]
+--- 获取sim卡的状态
+-- @return bool ,true表示sim卡正常，false或者nil表示未检测到卡或者卡异常
+-- @usage   开机lua脚本运行之后，会发送at命令去查询状态，所以需要一定时间才能获取到状态。开机后立即调用此接口，基本上返回nil
+-- @usage sim.getstatus()
 function getstatus()
     return status
 end

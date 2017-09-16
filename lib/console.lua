@@ -7,12 +7,19 @@
 --
 require "sys"
 module(..., package.seeall)
+local uart = require "uart"
+
 local uart_id
 local console_task
 
 local function read_line()
-    coroutine.yield()
-    return uart.read(uart_id, "*l")
+    while true do
+        local s = uart.read(uart_id, "*l")
+        if s ~= "" then
+            return s
+        end
+        coroutine.yield()
+    end
 end
 
 local function write(s)
@@ -36,7 +43,7 @@ local function main_loop()
     
     -- 输出提示语
     write("\r\nWelcome to Luat Console\r\n")
-    write("\r\n> ")
+    write("---------------------------------------------------------------\r\n> ")
     
     while true do
         -- 读取输入

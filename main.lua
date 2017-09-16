@@ -9,6 +9,7 @@ require"console"
 console.setup(1, 115200)
 -- 看门狗
 require "wdt"
+wdt.wdtSetupPin(pio.P0_31,pio.P0_29)
 require "testTask"
 
 sys.init(0, 0)
