@@ -1,0 +1,14 @@
+
+#项目：console.lua
+#日期：2017.09.16 12:19
+#日志：
+    增加串口打印控制台调试模块，使用方法：
+        require "console"
+        console.setup(1,115200)
+
+#项目：luat-task
+#日期：2017.09.16 12:19
+#日志：
+    推送一个主分支，暂时没有发现bug的sys.lua,net.lua,sim.lua,ril.lua
+
+
