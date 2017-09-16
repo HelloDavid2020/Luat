@@ -5,6 +5,8 @@ PROJECT = "DEMO_TASK"
 VERSION = "2.0.0"
 require "sys"
 require "net"
+require"console"
+console.setup(1, 115200)
 -- 看门狗
 require "wdt"
 require "testTask"

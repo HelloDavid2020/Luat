@@ -138,7 +138,7 @@ local uartTransmitDones = {}
 -- @number id：物理串口号，1表示UART1，2表示UART2
 -- @param  fnc：数据接收处理函数名
 -- @return 无
--- @usage reguart(uart.ATC,atc)
+-- @usage regUartReceive(uart.ATC,atc)
 function regUartReceive(id, fnc)
     uartReceives[id] = fnc
 end
@@ -147,7 +147,7 @@ end
 -- @number id：物理串口号，1表示UART1，2表示UART2
 -- @param fnc：调用uart.write接口发送数据，数据发送完成后的回调函数
 -- @return 无
--- @usage regUartx(1,uart)
+-- @usage regUartTransmitDone(1,uart)
 function regUartTransmitDone(id, fnc)
     uartTransmitDones[id] = fnc
 end
