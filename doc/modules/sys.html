@@ -1,0 +1,639 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Luat-Lib-API</title>
+    <link rel="stylesheet" href="../ldoc_pale.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>LuatDoc</h1>
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Functions">Functions</a></li>
+</ul>
+
+
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/log.html">log</a></li>
+  <li><a href="../modules/net.html">net</a></li>
+  <li><a href="../modules/ril.html">ril</a></li>
+  <li><strong>sys</strong></li>
+  <li><a href="../modules/wdt.html">wdt</a></li>
+  <li><a href="../modules/test.html">test</a></li>
+</ul>
+<h2>Manual</h2>
+<ul class="nowrap">
+  <li><a href="../manual/readme.md.html">readme</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Module <code>sys</code></h1>
+<p>模块功能：luat协程调度框架</p>
+<p>
+
+</p>
+    <h3>Info:</h3>
+    <ul>
+        <li><strong>Copyright</strong>: openLuat.com</li>
+        <li><strong>Release</strong>: 2017.9.13</li>
+        <li><strong>License</strong>: MIT</li>
+        <li><strong>Author</strong>: 稀饭放姜 小强</li>
+    </ul>
+
+
+<h2><a href="#Functions">Functions</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#powerOn">powerOn ()</a></td>
+	<td class="summary">启动GSM协议栈。例如在充电开机未启动GSM协议栈状态下，如果用户长按键正常开机，此时调用此接口启动GSM协议栈即可</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#restart">restart (r)</a></td>
+	<td class="summary">软件重启</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#setWorkMode">setWorkMode (v)</a></td>
+	<td class="summary">设置工作模式</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#getWorkMode">getWorkMode ()</a></td>
+	<td class="summary">获取工作模式</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#getCoreVer">getCoreVer ()</a></td>
+	<td class="summary">获取底层软件版本号</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#openTrace">openTrace (v, uartid, baudrate)</a></td>
+	<td class="summary">开启或者关闭print的打印输出功能</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#regmsg">regmsg (id, handler)</a></td>
+	<td class="summary">注册“除定时器消息、物理串口消息外的其他外部消息（例如AT命令的虚拟串口数据接收消息、音频消息、充电管理消息、按键消息等）”的处理函数</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#regUartReceive">regUartReceive (id, fnc)</a></td>
+	<td class="summary">注册物理串口的数据接收处理函数</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#regUartTransmitDone">regUartTransmitDone (id, fnc)</a></td>
+	<td class="summary">注册物理串口的数据发送完成处理函数</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#wait">wait (ms)</a></td>
+	<td class="summary">Task任务延时函数，只能用于任务函数中</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#taskInit">taskInit (fun, ...)</a></td>
+	<td class="summary">创建一个任务线程,在模块最末行调用该函数并注册模块中的任务函数，main.lua导入该模块即可</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#init">init (mode, lprfnc)</a></td>
+	<td class="summary">Luat平台初始化</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#timer_stop">timer_stop (val, ...)</a></td>
+	<td class="summary">关闭定时器</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#regapp">regapp (...)</a></td>
+	<td class="summary">注册App，该类应用需要来自rtos或lua层的消息唤醒回调，用任务轮询处理不方便的时候使用。当你需要的时候你就知道为什么用它了。</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#deregapp">deregapp (id)</a></td>
+	<td class="summary">解注册app</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#dispatch">dispatch (...)</a></td>
+	<td class="summary">产生内部消息，存储在内部消息队列中</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header "><a name="Functions"></a>Functions</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "powerOn"></a>
+    <strong>powerOn ()</strong>
+    </dt>
+    <dd>
+    启动GSM协议栈。例如在充电开机未启动GSM协议栈状态下，如果用户长按键正常开机，此时调用此接口启动GSM协议栈即可
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        无
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">sys.powerOn()</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "restart"></a>
+    <strong>restart (r)</strong>
+    </dt>
+    <dd>
+    软件重启
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">r</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         重启原因，用户自定义，一般是string类型，重启后的trace中会打印出此重启原因
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        无
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">sys.restart(<span class="string">'程序超时软件重启'</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "setWorkMode"></a>
+    <strong>setWorkMode (v)</strong>
+    </dt>
+    <dd>
+    设置工作模式
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">v</span>
+            <span class="types"><span class="type">number</span></span>
+         工作模式，默认完整模式\
+SIMPLE<em>MODE：简单模式，默认不会开启“每一分钟产生一个内部消息”、“定时查询csq”、“定时查询ceng”的功能\
+FULL</em>MODE：完整模式，默认会开启“每一分钟产生一个内部消息”、“定时查询csq”、“定时查询ceng”的功能
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        Boole ,成功返回true，否则返回nil
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">sys.setworkmode(FULL_MODE)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "getWorkMode"></a>
+    <strong>getWorkMode ()</strong>
+    </dt>
+    <dd>
+    获取工作模式
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        number ,当前工作模式
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">mode = sys.getWorkMode()</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "getCoreVer"></a>
+    <strong>getCoreVer ()</strong>
+    </dt>
+    <dd>
+    获取底层软件版本号
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        string ,版本号字符串
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">coreVer = sys.getCorVer()</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "openTrace"></a>
+    <strong>openTrace (v, uartid, baudrate)</strong>
+    </dt>
+    <dd>
+    开启或者关闭print的打印输出功能
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">v</span>
+            <span class="types"><span class="type">bool</span></span>
+        ：false或nil为关闭，其余为开启
+        </li>
+        <li><span class="parameter">uartid</span>
+        ：输出Luatrace的端口：nil表示host口，1表示uart1,2表示uart2
+        </li>
+        <li><span class="parameter">baudrate</span>
+            <span class="types"><span class="type">number</span></span>
+        ：number类型，uartid不为nil时，此参数才有意义，表示波特率，默认115200 \
+支持1200,2400,4800,9600,14400,19200,28800,38400,57600,76800,115200,230400,460800,576000,921600,1152000,4000000
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        无
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">sys.openTrace(<span class="number">1</span>,<span class="keyword">nil</span>,<span class="number">921600</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "regmsg"></a>
+    <strong>regmsg (id, handler)</strong>
+    </dt>
+    <dd>
+    注册“除定时器消息、物理串口消息外的其他外部消息（例如AT命令的虚拟串口数据接收消息、音频消息、充电管理消息、按键消息等）”的处理函数
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">id</span>
+            <span class="types"><span class="type">number</span></span>
+         消息类型id
+        </li>
+        <li><span class="parameter">handler</span>
+         消息处理函数
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        无
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">regmsg(rtos.MSG_KEYPAD,keymsg) <span class="comment">-- keymsg() 是键盘处理函数</span></pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "regUartReceive"></a>
+    <strong>regUartReceive (id, fnc)</strong>
+    </dt>
+    <dd>
+    注册物理串口的数据接收处理函数
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">id</span>
+            <span class="types"><span class="type">number</span></span>
+        ：物理串口号，1表示UART1，2表示UART2
+        </li>
+        <li><span class="parameter">fnc</span>
+        ：数据接收处理函数名
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        无
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">regUartReceive(uart.ATC,atc)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "regUartTransmitDone"></a>
+    <strong>regUartTransmitDone (id, fnc)</strong>
+    </dt>
+    <dd>
+    注册物理串口的数据发送完成处理函数
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">id</span>
+            <span class="types"><span class="type">number</span></span>
+        ：物理串口号，1表示UART1，2表示UART2
+        </li>
+        <li><span class="parameter">fnc</span>
+        ：调用uart.write接口发送数据，数据发送完成后的回调函数
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        无
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">regUartTransmitDone(<span class="number">1</span>,uart)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "wait"></a>
+    <strong>wait (ms)</strong>
+    </dt>
+    <dd>
+    Task任务延时函数，只能用于任务函数中
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">ms</span>
+            <span class="types"><span class="type">number</span></span>
+          整数，最大等待126322567毫秒
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        number 正常返回1，失败返回nil
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">sys.wait(<span class="number">30</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "taskInit"></a>
+    <strong>taskInit (fun, ...)</strong>
+    </dt>
+    <dd>
+    创建一个任务线程,在模块最末行调用该函数并注册模块中的任务函数，main.lua导入该模块即可
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">fun</span>
+          任务函数名，用于resume唤醒时调用
+        </li>
+        <li><span class="parameter">...</span>
+          任务函数fun的可变参数
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        co  返回该任务的线程号
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">sys.taskInit(task1,<span class="string">'a'</span>,<span class="string">'b'</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "init"></a>
+    <strong>init (mode, lprfnc)</strong>
+    </dt>
+    <dd>
+    Luat平台初始化
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">mode</span>
+         充电开机是否启动GSM协议栈，1不启动，否则启动
+        </li>
+        <li><span class="parameter">lprfnc</span>
+         用户应用脚本中定义的“低电关机处理函数”，如果有函数名，则低电时，本文件中的run接口不会执行任何动作，否则，会延时1分钟自动关机
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        无
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">sys.init(<span class="number">1</span>,<span class="number">0</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "timer_stop"></a>
+    <strong>timer_stop (val, ...)</strong>
+    </dt>
+    <dd>
+    关闭定时器
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">val</span>
+         值为number时，识别为定时器ID，值为回调函数时，需要传参数
+        </li>
+        <li><span class="parameter">...</span>
+         val值为函数时，函数的可变参数
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        无
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">timer_stop(<span class="number">1</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "regapp"></a>
+    <strong>regapp (...)</strong>
+    </dt>
+    <dd>
+    注册App，该类应用需要来自rtos或lua层的消息唤醒回调，用任务轮询处理不方便的时候使用。当你需要的时候你就知道为什么用它了。
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">...</span>
+         可变参数：以函数+参数...注册的方式，以table注册的方式
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        table ,返回app函数名，参数
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <li><pre class="example">regapp(fncname,<span class="string">"MSG1"</span>,<span class="string">"MSG2"</span>,<span class="string">"MSG3"</span>) 注册形式为：{procer=arg[<span class="number">1</span>],<span class="string">"MSG1"</span>,<span class="string">"MSG2"</span>,<span class="string">"MSG3"</span>}</pre></li>
+        <li><pre class="example">regapp({MSG1=fnc1,MSG2=fnc2,MSG3=fnc3}) 注册形式为：形式为{MSG1=fnc1,MSG2=fnc2,MSG3=fnc3}</pre></li>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "deregapp"></a>
+    <strong>deregapp (id)</strong>
+    </dt>
+    <dd>
+    解注册app
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">id</span>
+        ：app的id，id共有两种方式，一种是函数名，另一种是table名
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        无
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">deregapp(app)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "dispatch"></a>
+    <strong>dispatch (...)</strong>
+    </dt>
+    <dd>
+    产生内部消息，存储在内部消息队列中
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">...</span>
+         可变参数，用户自定义
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        无
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">dispatch(app)</pre>
+    </ul>
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
+<i style="float:right;">Last updated 2017-09-16 14:58:55 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>
