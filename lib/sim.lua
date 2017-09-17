@@ -4,7 +4,6 @@
 -- @license MIT
 -- @copyright openLuat
 -- @release 2017.02.13
---[[定义模块,导入依赖库]]
 local string = require "string"
 local ril = require "ril"
 local sys = require "sys"
