@@ -38,13 +38,13 @@
 
 <h2>Modules</h2>
 <ul class="nowrap">
-  <li><a href="../modules/led.html">led</a></li>
+  <li><strong>led</strong></li>
   <li><a href="../modules/log.html">log</a></li>
   <li><a href="../modules/net.html">net</a></li>
   <li><a href="../modules/ril.html">ril</a></li>
   <li><a href="../modules/sim.html">sim</a></li>
   <li><a href="../modules/sys.html">sys</a></li>
-  <li><strong>wdt</strong></li>
+  <li><a href="../modules/wdt.html">wdt</a></li>
   <li><a href="../modules/test.html">test</a></li>
 </ul>
 <h2>Manual</h2>
@@ -56,8 +56,8 @@
 
 <div id="content">
 
-<h1>Module <code>wdt</code></h1>
-<p>模块功能：外部硬件看门狗</p>
+<h1>Module <code>led</code></h1>
+<p>模块功能：LED闪灯模块</p>
 <p>
 
 </p>
@@ -66,15 +66,19 @@
         <li><strong>Copyright</strong>: openLuat</li>
         <li><strong>Release</strong>: 2017.09.13</li>
         <li><strong>License</strong>: MIT</li>
-        <li><strong>Author</strong>: 稀饭放姜</li>
+        <li><strong>Author</strong>: smset,稀饭放姜</li>
     </ul>
 
 
 <h2><a href="#Functions">Functions</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#setup">setup (rst, wd)</a></td>
-	<td class="summary">配置模块与看门狗通讯IO并启动任务</td>
+	<td class="name" nowrap><a href="#setup">setup (ledPin)</a></td>
+	<td class="summary">配置net灯的GPIO</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#setBattBlink">setBattBlink (light, dark, dull)</a></td>
+	<td class="summary">自定义电量闪烁状态</td>
 	</tr>
 </table>
 
@@ -87,19 +91,16 @@
     <dl class="function">
     <dt>
     <a name = "setup"></a>
-    <strong>setup (rst, wd)</strong>
+    <strong>setup (ledPin)</strong>
     </dt>
     <dd>
-    配置模块与看门狗通讯IO并启动任务
+    配置net灯的GPIO
 
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">rst</span>
-         -- 模块复位单片机引脚(pio.P0_31)
-        </li>
-        <li><span class="parameter">wd</span>
-          -- 模块和单片机相互喂狗引脚(pio.P0_29)
+        <li><span class="parameter">ledPin</span>
+         , 模块闪灯GPIO引脚
         </li>
     </ul>
 
@@ -113,7 +114,45 @@
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example">setup(pio.P0_31,pio.P0_29)</pre>
+        <pre class="example">setup(pio.P0_28)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "setBattBlink"></a>
+    <strong>setBattBlink (light, dark, dull)</strong>
+    </dt>
+    <dd>
+    自定义电量闪烁状态
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">light</span>
+            <span class="types"><span class="type">number</span></span>
+         ,指示灯亮的时间ms
+        </li>
+        <li><span class="parameter">dark</span>
+            <span class="types"><span class="type">number</span></span>
+         ，指示灯灭的时间ms
+        </li>
+        <li><span class="parameter">dull</span>
+            <span class="types"><span class="type">number</span></span>
+         ，两次指示间隔的时间ms
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        无
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">setBattBlink(<span class="number">300</span>,<span class="number">700</span>,<span class="number">3000</span>)</pre>
     </ul>
 
 </dd>

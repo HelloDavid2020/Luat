@@ -18,9 +18,9 @@ local WATCHDOG_PIN = pio.P0_29
 -- @usage local RST_SCMWD_PIN,RST_SCMWD_PIN
 -- @usage taskWdt()
 --]]
-local function taskWdt(rst,wd)
+local function taskWdt(rst, wd)
     -- 初始化喂狗引脚电平(初始高电平，喂狗拉低2秒)
-    pio.pin.setdir(pio.OUTPUT1, rst)
+    pio.pin.setdir(pio.OUTPUT, rst)
     pio.pin.setval(1, rst)
     
     -- 模块<--->看门狗  相互循环喂脉冲
@@ -58,11 +58,9 @@ end
 -- @param rst -- 模块复位单片机引脚(pio.P0_31)
 -- @param wd  -- 模块和单片机相互喂狗引脚(pio.P0_29)
 -- @return 无
--- @usage wdtSetupPin(pio.P0_31,pio.P0_29)
-function wdtSetupPin(rst, wd)
+-- @usage setup(pio.P0_31,pio.P0_29)
+function setup(rst, wd)
     RST_SCMWD_PIN = rst or RST_SCMWD_PIN
     WATCHDOG_PIN = wd or WATCHDOG_PIN
-    sys.taskInit(taskWdt,RST_SCMWD_PIN,WATCHDOG_PIN)
+    sys.taskInit(taskWdt, RST_SCMWD_PIN, WATCHDOG_PIN)
 end
-
-

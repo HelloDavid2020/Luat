@@ -54,6 +54,18 @@ local function main_loop()
         cache_data = cache_data .. new_data
         -- 去掉回车换行
         local line = string.match(cache_data, "(.+)\r\n*")
+        ---[[调试输入参数部分,不需要时用--即可注释本段
+        write("\n")
+        if line == nil then
+            write("console.lua_60 line value is nothing")
+        elseif line == "" then
+            write("console.lua_62 line value null")
+        else
+            write("console.lua_64 line value :" .. line .."\n")
+            write("console.lua_65 line type :" .. (type(line)))
+        end
+        write("\n")
+        --]]
         if line then
             -- 收到一整行的数据 清除缓冲数据
             cache_data = ""
@@ -62,7 +74,7 @@ local function main_loop()
             -- 用xpcall执行用户输入的脚本，可以捕捉脚本的错误
             xpcall(function()
                     -- 执行用户输入的脚本
-                    f = loadstring(line)
+                    f = assert(loadstring(line))
                     setfenv(f, execute_env)
                     f()
             end,

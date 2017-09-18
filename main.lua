@@ -5,11 +5,16 @@ PROJECT = "DEMO_TASK"
 VERSION = "2.0.0"
 require "sys"
 require "net"
-require"console"
+-- 控制台
+require "console"
 console.setup(1, 115200)
 -- 看门狗
 require "wdt"
-wdt.wdtSetupPin(pio.P0_31,pio.P0_29)
+wdt.setup(pio.P0_31, pio.P0_29)
+-- 系統指示灯
+require "led"
+led.setup(pio.P0_28)
+-- 测试任务
 require "testTask"
 
 sys.init(0, 0)
