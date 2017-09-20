@@ -14,7 +14,7 @@ local sim = require "sim"
 module("net")
 
 --加载常用的全局函数至本地
-local dispatch = sys.dispatch
+local publish = sys.publish
 local tonumber, tostring, print = base.tonumber, base.tostring, base.print
 
 --GSM网络状态：
@@ -108,7 +108,7 @@ local function creg(data)
         end
         state = s
         --产生一个内部消息NET_STATE_CHANGED，表示GSM网络注册状态发生变化
-        dispatch("NET_STATE_CHANGED", s)
+        publish("NET_STATE_CHANGED", s)
     end
     --已注册并且lac或ci发生了变化
     if state == "REGISTERED" then
@@ -117,7 +117,7 @@ local function creg(data)
             lac = p2
             ci = p3
             --产生一个内部消息NET_CELL_CHANGED，表示lac或ci发生了变化
-            dispatch("NET_CELL_CHANGED")
+            publish("NET_CELL_CHANGED")
         end
     end
 end
@@ -183,7 +183,8 @@ local function ceng(data)
             cellinfo[id + 1].ta = tonumber(ta or "0")
             --产生一个内部消息CELL_INFO_IND，表示读取到了新的当前小区和临近小区信息
             if id == 0 then
-                dispatch("CELL_INFO_IND", cellinfo)
+                if multicellcb then multicellcb(cellinfo) end
+                publish("CELL_INFO_IND", cellinfo)
             end
         end
     end
@@ -326,67 +327,6 @@ function getTa()
 end
 
 --[[
-函数名：simInd
-功能  ：内部消息SIM_IND的处理函数
-参数  ：
-para：参数，表示SIM卡状态
-返回值：无
-]]
-local function simInd(para)
-    print("net.simInd ---->\t", simerrsta, para)
-    if simerrsta ~= (para ~= "RDY") then
-        simerrsta = (para ~= "RDY")
-    end
-    --sim卡工作不正常
-    if para ~= "RDY" then
-        --更新GSM网络状态
-        state = "UNREGISTER"
-        --产生内部消息NET_STATE_CHANGED，表示网络状态发生变化
-        dispatch("NET_STATE_CHANGED", state)
-    end
-    return true
-end
-
---[[
-函数名：flyInd
-功能  ：内部消息FLYMODE_IND的处理函数
-参数  ：
-para：参数，表示飞行模式状态，true表示进入飞行模式，false表示退出飞行模式
-返回值：无
-]]
-local function flyInd(para)
-    --飞行模式状态发生变化
-    if flyMode ~= para then
-        flyMode = para
-    --控制网络指示灯
-    --procled()
-    end
-    --退出飞行模式
-    if not para then
-        --处理查询定时器
-        csqQueryPoll()
-        cengQueryPoll()
-        --复位GSM网络状态
-        neturc("2", "+CREG")
-    end
-    return true
-end
-
---[[
-函数名：workModeInd
-功能  ：内部消息SYS_WORKMODE_IND的处理函数
-参数  ：
-para：参数，表示系统工作模式
-返回值：无
-]]
-local function workModeInd(para)
-    --处理查询定时器
-    cengQueryPoll()
-    csqQueryPoll()
-    return true
-end
-
---[[
 函数名：rsp
 功能  ：本功能模块内“通过虚拟串口发送到底层core软件的AT命令”的应答处理
 参数  ：
@@ -406,25 +346,9 @@ local function rsp(cmd, success, response, intermediate)
                 rssi = tonumber(s)
                 rssi = rssi == 99 and 0 or rssi
                 --产生一个内部消息GSM_SIGNAL_REPORT_IND，表示读取到了信号强度
-                dispatch("GSM_SIGNAL_REPORT_IND", success, rssi)
+                publish("GSM_SIGNAL_REPORT_IND", success, rssi)
             end
         elseif prefix == "+CENG" then end
-    end
-end
-
---[[
-函数名：cellInfoInd
-功能  ：CELL_INFO_IND消息的处理函数
-参数  ：无
-返回值：如果有用户自定义的获取多基站信息的回调函数，则返回nil；否则返回true
-]]
-local function cellInfoInd()
-    if multicellcb then
-        local cb = multicellcb
-        multicellcb = nil
-        cb(getCellInfoExt())
-    else
-        return true
     end
 end
 
@@ -435,48 +359,6 @@ function getmulticell(cb)
     multicellcb = cb
     --发送AT+CENG?查询
     ril.request("AT+CENG?")
-end
-
---[[
-函数名：userSocketConnInd
-功能  ：内部消息USER_SOCKET_CONNECT的处理函数
-参数  ：
-v：参数，表示用户socket是否连接上后台
-返回值：无
-]]
-local function userSocketConnInd(v)
-    print("net.userSocketConnInd ---->\t", v)
-    if userSocketConn ~= v then
-        userSocketConn = v
-    end
-end
-
---- 获取用户socket连接后台状态
--- @return bool,返回cgatt的值
--- @usage net.getCgatt()
-function getUserSocketSta()
-    return userSocketConn
-end
-
---[[
-函数名：cgattInd
-功能  ：内部消息NET_GPRS_READY的处理函数
-参数  ：
-v：参数，表示是否附着上GPRS数据网络
-返回值：无
-]]
-local function cgattInd(v)
-    print("net.cgattInd ---->\t", v)
-    if cgatt ~= v then
-        cgatt = v
-    end
-end
-
---- 获取GPRS网络附着状态
--- @return bool,返回cgatt的值
--- @usage net.getCgatt()
-function getCgatt()
-    return cgatt
 end
 
 --- 查询基站信息(当前和临近小区信息)
@@ -547,19 +429,43 @@ function stopQueryAll()
     sys.timer_stop(cengQueryPoll)
 end
 
+-- 处理SIM卡状态消息，SIM卡工作不正常时更新网络状态为未注册
+sys.subscribe("SIM_IND", function(para)
+    print("net.simInd ---->\t", simerrsta, para)
+    if simerrsta ~= (para ~= "RDY") then
+        simerrsta = (para ~= "RDY")
+    end
+    --sim卡工作不正常
+    if para ~= "RDY" then
+        --更新GSM网络状态
+        state = "UNREGISTER"
+        --产生内部消息NET_STATE_CHANGED，表示网络状态发生变化
+        publish("NET_STATE_CHANGED", state)
+    end
+end)
 
---本模块关注的内部消息处理函数表
-local procer =
-    {
-        SIM_IND = simInd,
-        FLYMODE_IND = flyInd,
-        SYS_WORKMODE_IND = workModeInd,
-        USER_SOCKET_CONNECT = userSocketConnInd,
-        NET_GPRS_READY = cgattInd,
-        CELL_INFO_IND = cellInfoInd,
-    }
---注册消息处理函数表
-sys.regapp(procer)
+-- 处理飞行模式切换
+sys.subscribe("FLYMODE_IND", function(para)
+    --飞行模式状态发生变化
+    if flyMode ~= para then
+        flyMode = para
+    end
+    --退出飞行模式
+    if not para then
+        --处理查询定时器
+        csqQueryPoll()
+        cengQueryPoll()
+        --复位GSM网络状态
+        neturc("2", "+CREG")
+    end
+end)
+
+-- 处理工作模式切换
+sys.subscribe("SYS_WORKMODE_IND", function()
+    cengQueryPoll()
+    csqQueryPoll()
+end)
+
 --注册+CREG和+CENG通知的处理函数
 ril.regurc("+CREG", neturc)
 ril.regurc("+CENG", neturc)

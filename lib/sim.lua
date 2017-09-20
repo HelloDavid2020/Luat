@@ -75,7 +75,7 @@ local function rsp(cmd, success, response, intermediate)
     elseif cmd == "AT+CIMI" then
         imsi = intermediate
         --产生一个内部消息IMSI_READY，通知已经读取imsi
-        sys.dispatch("IMSI_READY")
+        sys.publish("IMSI_READY")
     end
 end
 
@@ -96,16 +96,16 @@ local function urc(data, prefix)
             status = true
             ril.request("AT+CCID")
             ril.request("AT+CIMI")
-            sys.dispatch("SIM_IND", "RDY")
+            sys.publish("SIM_IND", "RDY")
         --未检测到sim卡
         elseif data == "+CPIN: NOT INSERTED" then
-            sys.dispatch("SIM_IND", "NIST")
+            sys.publish("SIM_IND", "NIST")
         else
             --sim卡pin开启
             if data == "+CPIN: SIM PIN" then
-                sys.dispatch("SIM_IND_SIM_PIN")
+                sys.publish("SIM_IND_SIM_PIN")
             end
-            sys.dispatch("SIM_IND", "NORDY")
+            sys.publish("SIM_IND", "NORDY")
         end
     end
 end

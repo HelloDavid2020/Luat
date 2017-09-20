@@ -54,8 +54,8 @@ end
 
 --- 设置工作模式
 -- @number v 工作模式，默认完整模式\
---SIMPLE_MODE：简单模式，默认不会开启“每一分钟产生一个内部消息”、“定时查询csq”、“定时查询ceng”的功能\
---FULL_MODE：完整模式，默认会开启“每一分钟产生一个内部消息”、“定时查询csq”、“定时查询ceng”的功能
+-- SIMPLE_MODE：简单模式，默认不会开启“每一分钟产生一个内部消息”、“定时查询csq”、“定时查询ceng”的功能\
+-- FULL_MODE：完整模式，默认会开启“每一分钟产生一个内部消息”、“定时查询csq”、“定时查询ceng”的功能
 -- @return Boole ,成功返回true，否则返回nil
 -- @usage sys.setworkmode(FULL_MODE)
 function setWorkMode(v)
@@ -85,8 +85,8 @@ end
 -- @bool v：false或nil为关闭，其余为开启
 -- @param uartid：输出Luatrace的端口：nil表示host口，1表示uart1,2表示uart2
 -- @number baudrate：number类型，uartid不为nil时，此参数才有意义，表示波特率，默认115200 \
---支持1200,2400,4800,9600,14400,19200,28800,38400,57600,76800,115200,230400,460800,576000,921600,1152000,4000000
--- @return  无
+-- 支持1200,2400,4800,9600,14400,19200,28800,38400,57600,76800,115200,230400,460800,576000,921600,1152000,4000000
+-- @return 无
 -- @usage sys.openTrace(1,nil,921600)
 function openTrace(v, uartid, baudrate)
     if uartid then
@@ -124,8 +124,8 @@ function wait(ms)
 end
 
 --- 创建一个任务线程,在模块最末行调用该函数并注册模块中的任务函数，main.lua导入该模块即可
--- @param fun  任务函数名，用于resume唤醒时调用
--- @param ...  任务函数fun的可变参数
+-- @param fun 任务函数名，用于resume唤醒时调用
+-- @param ... 任务函数fun的可变参数
 -- @return co  返回该任务的线程号
 -- @usage sys.taskInit(task1,'a','b')
 function taskInit(fun, ...)
@@ -246,177 +246,84 @@ function timer_start(fnc, ms, ...)
     return msgId
 end
 
------------------------------------------- app 注册处理部分 ------------------------------------------
---app应用表
-local apps = {}
+------------------------------------------ LUA应用消息订阅/发布接口 ------------------------------------------
+-- 订阅者列表
+local subscribers = {}
 --内部消息队列
-local queMsg = {}
+local messageQueue = {}
 
---- 注册App，该类应用需要来自rtos或lua层的消息唤醒回调，用任务轮询处理不方便的时候使用。当你需要的时候你就知道为什么用它了。
--- @param ... 可变参数：以函数+参数...注册的方式，以table注册的方式
--- @return table ,返回app函数名，参数
--- @usage regapp(fncname,"MSG1","MSG2","MSG3") 注册形式为：{procer=arg[1],"MSG1","MSG2","MSG3"}
--- @usage regapp({MSG1=fnc1,MSG2=fnc2,MSG3=fnc3}) 注册形式为：形式为{MSG1=fnc1,MSG2=fnc2,MSG3=fnc3}
-function regapp(...)
-    local app = arg[1]
-    --table方式
-    if type(app) == "table" then
-        --函数方式
-        elseif type(app) == "function" then
-        app = {procer = arg[1], unpack(arg, 2, arg.n)}
-        else
-            error("unknown app type " .. type(app), 2)
+local pendingSubscribeReqeusts = {}
+local pendingUnsubscribeRequests = {}
+
+--- 订阅消息
+-- @param id 消息id
+-- @param callback 消息回调处理
+-- @usage subscribe("NET_STATUS_IND", callback)
+function subscribe(id, callback)
+    if type(id) ~= "string" or type(callback) ~= "function" then
+        print("warning: sys.subscribe invalid parameter", id, callback)
+        return
     end
-    --产生一个增加app的内部消息
-    dispatch("SYS_ADD_APP", app)
-    return app
+    table.insert(pendingSubscribeReqeusts, { id, callback })
 end
 
---- 解注册app
--- @param id：app的id，id共有两种方式，一种是函数名，另一种是table名
--- @return 无
--- @usage deregapp(app)
-function deregapp(id)
-    --产生一个移除app的内部消息
-    dispatch("SYS_REMOVE_APP", id)
-end
-
-
---[[
-函数名：addapp
-功能  ：增加app
-参数  ：
-app：某个app，有以下两种形式：
-如果是以函数方式注册的app，例如regapp(fncname,"MSG1","MSG2","MSG3"),则形式为：{procer=arg[1],"MSG1","MSG2","MSG3"}
-如果是以table方式注册的app，例如regapp({MSG1=fnc1,MSG2=fnc2,MSG3=fnc3}),则形式为{MSG1=fnc1,MSG2=fnc2,MSG3=fnc3}
-返回值：无
-]]
-local function addapp(app)
-    -- 插入尾部
-    table.insert(apps, #apps + 1, app)
-end
-
---[[
-函数名：removeapp
-功能  ：移除app
-参数  ：
-id：app的id，id共有两种方式，一种是函数名，另一种是table名
-返回值：无
-]]
-local function removeapp(id)
-    --遍历app表
-    for k, v in ipairs(apps) do
-        --app的id如果是函数名
-        if type(id) == "function" then
-            if v.procer == id then
-                table.remove(apps, k)
-                return
-            end
-        --app的id如果是table名
-        elseif v == id then
-            table.remove(apps, k)
-            return
-        end
+--- 取消订阅消息
+-- @param id 消息id
+-- @param callback 消息回调处理
+-- @usage unsubscribe("NET_STATUS_IND", callback)
+function unsubscribe(id, callback)
+    if type(id) ~= "string" or type(callback) ~= "function" then
+        print("warning: sys.unsubscribe invalid parameter", id, callback)
+        return
     end
+    table.insert(pendingUnsubscribeRequests, { id, callback })
 end
 
---- 产生内部消息，存储在内部消息队列中
+--- 发布内部消息，存储在内部消息队列中
 -- @param ... 可变参数，用户自定义
 -- @return 无
--- @usage dispatch(app)
-function dispatch(...)
-    table.insert(queMsg, arg)
+-- @usage publish("NET_STATUS_IND")
+function publish(...)
+    table.insert(messageQueue, arg)
 end
 
---[[
-函数名：getmsg
-功能  ：读取内部消息
-参数  ：无
-返回值：内部消息队列中的第一个消息，不存在则返回nil
-]]
-local function getmsg()
-    if #queMsg == 0 then
-        return nil
+-- 分发消息
+local function dispatch()
+    -- 处理订阅、取消订阅的请求
+    for _, req in ipairs(pendingSubscribeReqeusts) do
+        local id, callback = req[1], req[2]
+        if not subscribers[id] then
+            subscribers[id] = {}
+        end
+        table.insert(subscribers[id], callback)
     end
-    return table.remove(queMsg, 1)
-end
 
---[[
-函数名：callapp
-功能  ：处理内部消息
-通过遍历每个app进行处理
-参数  ：
-msg：消息
-返回值：无
-]]
-local function callapp(msg)
-    local id = msg[1]
-    --增加app消息
-    if id == "SYS_ADD_APP" then
-        addapp(unpack(msg, 2, #msg))
-    --移除app消息
-    elseif id == "SYS_REMOVE_APP" then
-        removeapp(unpack(msg, 2, #msg))
-    else
-        local app
-        --遍历app表
-        for i = #apps, 1, -1 do
-            app = apps[i]
-            --函数注册方式的app,带消息id通知
-            if app.procer then
-                for _, v in ipairs(app) do
-                    if v == id then
-                        --如果消息的处理函数没有返回true，则此消息的生命期结束；否则一直遍历app
-                        if app.procer(unpack(msg)) ~= true then
-                            return
-                        end
-                    end
-                end
-            --table注册方式的app,不带消息id通知
-            elseif app[id] then
-                --如果消息的处理函数没有返回true，则此消息的生命期结束；否则一直遍历app
-                if app[id](unpack(msg, 2, #msg)) ~= true then
-                    return
-                end
+    for _, req in ipairs(pendingUnsubscribeRequests) do
+        local id, callback = req[1], req[2]
+        if not subscribers[id] then return end
+        for i, v in ipairs(subscribers) do
+            if v == callback then
+                table.remove(subscribers[id], i)
             end
         end
     end
-end
-
---界面刷新内部消息
-local refreshmsg = {"MMI_REFRESH_IND"}
-
---[[
-函数名：runqmsg
-功能  ：处理内部消息
-参数  ：无
-返回值：无
-]]
-local function runqmsg()
-    local inmsg
 
     while true do
-        --读取内部消息
-        inmsg = getmsg()
-        --内部消息为空
-        if inmsg == nil then
-            --需要刷新界面
-            if refreshflag == true then
-                refreshflag = false
-                --产生一个界面刷新内部消息
-                inmsg = refreshmsg
-            else
-                break
+        if #messageQueue == 0 then
+            break
+        end
+        local message = table.remove(messageQueue, 1)
+        if subscribers[message[1]] then
+            for _, callback in ipairs(subscribers[message[1]]) do
+                callback(unpack(message, 2, #message))
             end
         end
-        --处理内部消息
-        callapp(inmsg)
     end
 end
 
 -- rtos消息回调
 local handlers = {}
-setmetatable(handlers, {__index = function() return function() end end, })
+setmetatable(handlers, { __index = function() return function() end end, })
 
 --- 注册rtos消息回调处理函数
 -- @number id 消息类型id
@@ -433,8 +340,8 @@ end
 -- @usage sys.run()
 function run()
     while true do
-        --处理内部消息
-        runqmsg()
+        -- 分发内部消息
+        dispatch()
         -- 阻塞读取外部消息
         local msg, param = rtos.receive(rtos.INF_TIMEOUT)
         -- 判断是否为定时器消息，并且消息是否注册
@@ -458,7 +365,7 @@ function run()
                     cb()
                 end
             end
-        --其他消息（音频消息、充电管理消息、按键消息等）
+            --其他消息（音频消息、充电管理消息、按键消息等）
         else
             handlers[msg](param)
         end
