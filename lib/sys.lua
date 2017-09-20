@@ -99,19 +99,6 @@ function openTrace(v, uartid, baudrate)
     rtos.set_trace(v and 1 or 0, uartid)
 end
 
---“除定时器消息、物理串口消息外的其他外部消息（例如AT命令的虚拟串口数据接收消息、音频消息、充电管理消息、按键消息等）”的处理函数表
-local handlers = {}
-setmetatable(handlers, {__index = function() return function() end end, })
-
---- 注册“除定时器消息、物理串口消息外的其他外部消息（例如AT命令的虚拟串口数据接收消息、音频消息、充电管理消息、按键消息等）”的处理函数
--- @number id 消息类型id
--- @param handler 消息处理函数
--- @return 无
--- @usage regmsg(rtos.MSG_KEYPAD,keymsg) -- keymsg() 是键盘处理函数
-function on(id, handler)
-    handlers[id] = handler
-end
-
 --- Task任务延时函数，只能用于任务函数中
 -- @number ms  整数，最大等待126322567毫秒
 -- @return number 正常返回1，失败返回nil
@@ -156,7 +143,7 @@ function init(mode, lprfnc)
     -- 用户应用脚本中必须定义PROJECT和VERSION两个全局变量，否则会死机重启，如何定义请参考各个demo中的main.lua
     assert(PROJECT and PROJECT ~= "" and VERSION and VERSION ~= "", "Undefine PROJECT or VERSION")
     collectgarbage("setpause", 80)
-    
+
     -- 设置AT命令的虚拟串口
     uart.setup(uart.ATC, 0, 0, uart.PAR_NONE, uart.STOP_1)
     print("poweron reason:", rtos.poweron_reason(), PROJECT, VERSION, SCRIPT_LIB_VER, getCoreVer())
@@ -407,7 +394,7 @@ local refreshmsg = {"MMI_REFRESH_IND"}
 ]]
 local function runqmsg()
     local inmsg
-    
+
     while true do
         --读取内部消息
         inmsg = getmsg()
@@ -427,6 +414,19 @@ local function runqmsg()
     end
 end
 
+-- rtos消息回调
+local handlers = {}
+setmetatable(handlers, {__index = function() return function() end end, })
+
+--- 注册rtos消息回调处理函数
+-- @number id 消息类型id
+-- @param handler 消息处理函数
+-- @return 无
+-- @usage rtos.on(rtos.MSG_KEYPAD, function(param) handle keypad message end)
+rtos.on = function(id, handler)
+    handlers[id] = handler
+end
+
 ------------------------------------------ Luat 主调度框架  ------------------------------------------
 --- run()从底层获取core消息并及时处理相关消息，查询定时器并调度各注册成功的任务线程运行和挂起
 -- @return 无
@@ -436,31 +436,31 @@ function run()
         --处理内部消息
         runqmsg()
         -- 阻塞读取外部消息
-        msg, msgPara = rtos.receive(rtos.INF_TIMEOUT)
+        local msg, param = rtos.receive(rtos.INF_TIMEOUT)
         -- 判断是否为定时器消息，并且消息是否注册
-        if msg == rtos.MSG_TIMER and timerPool[msgPara] ~= nil then
-            if msgPara < 21 then
-                print("timerPool[msgPara] is task ----->", msgPara, timerPool[msgPara])
+        if msg == rtos.MSG_TIMER and timerPool[param] ~= nil then
+            if param < 21 then
+                print("timerPool[msgPara] is task ----->", param, timerPool[param])
                 -- 根据定时器表获得任务线程ID
-                local co = timerPool[msgPara]
+                local co = timerPool[param]
                 -- 清除定时器ID值
-                timerPool[msgPara] = nil
+                timerPool[param] = nil
                 -- 运行该线程
                 coroutine.resume(co)
             else
-                local cb = timerPool[msgPara]
-                print("timerPool[msgPara] is msg ---->", msgPara, timerPool[msgPara])
-                timerPool[msgPara] = nil
+                local cb = timerPool[param]
+                print("timerPool[msgPara] is msg ---->", param, timerPool[param])
+                timerPool[param] = nil
                 print("sys.run msg --> cb", cb)
-                if para[msgPara] ~= nil then
-                    cb(unpack(para[msgPara]))
+                if para[param] ~= nil then
+                    cb(unpack(para[param]))
                 else
                     cb()
                 end
             end
         --其他消息（音频消息、充电管理消息、按键消息等）
         else
-            handlers[msg](msgPara)
+            handlers[msg](param)
         end
     end
 end

@@ -22,13 +22,13 @@ uart.on = function(id, event, callback)
     end
 end
 
-sys.on(rtos.MSG_UART_RXDATA, function(id)
+rtos.on(rtos.MSG_UART_RXDATA, function(id)
     if uartReceiveCallbacks[id] then
         uartReceiveCallbacks[id]()
     end
 end)
 
-sys.on(rtos.MSG_UART_TX_DONE, function(id)
+rtos.on(rtos.MSG_UART_TX_DONE, function(id)
     if uartSentCallbacks[id] then
         uartSentCallbacks[id]()
     end
