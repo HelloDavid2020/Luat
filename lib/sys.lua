@@ -6,23 +6,7 @@
 -- @release 2017.9.13
 require "patch"
 require "log"
-local base = _G
-local table = require "table"
-local rtos = require "rtos"
-local uart = require "uart"
-local io = require "io"
-local os = require "os"
-local string = require "string"
 module(..., package.seeall)
-
--- 加载常用的全局函数至本地
-local print = base.print
-local unpack = base.unpack
-local ipairs = base.ipairs
-local type = base.type
-local pairs = base.pairs
-local assert = base.assert
-local tonumber = base.tonumber
 
 -- lib脚本版本号，只要lib中的任何一个脚本做了修改，都需要更新此版本号
 SCRIPT_LIB_VER = "2.0.0"
@@ -117,39 +101,15 @@ end
 
 --“除定时器消息、物理串口消息外的其他外部消息（例如AT命令的虚拟串口数据接收消息、音频消息、充电管理消息、按键消息等）”的处理函数表
 local handlers = {}
-base.setmetatable(handlers, {__index = function() return function() end end, })
+setmetatable(handlers, {__index = function() return function() end end, })
 
 --- 注册“除定时器消息、物理串口消息外的其他外部消息（例如AT命令的虚拟串口数据接收消息、音频消息、充电管理消息、按键消息等）”的处理函数
 -- @number id 消息类型id
 -- @param handler 消息处理函数
 -- @return 无
 -- @usage regmsg(rtos.MSG_KEYPAD,keymsg) -- keymsg() 是键盘处理函数
-function regmsg(id, handler)
+function on(id, handler)
     handlers[id] = handler
-end
-
---各个物理串口的数据接收处理函数表
-local uartReceives = {}
-
---各个物理串口的数据发送完成通知函数表
-local uartTransmitDones = {}
-
----注册物理串口的数据接收处理函数
--- @number id：物理串口号，1表示UART1，2表示UART2
--- @param  fnc：数据接收处理函数名
--- @return 无
--- @usage regUartReceive(uart.ATC,atc)
-function regUartReceive(id, fnc)
-    uartReceives[id] = fnc
-end
-
---- 注册物理串口的数据发送完成处理函数
--- @number id：物理串口号，1表示UART1，2表示UART2
--- @param fnc：调用uart.write接口发送数据，数据发送完成后的回调函数
--- @return 无
--- @usage regUartTransmitDone(1,uart)
-function regUartTransmitDone(id, fnc)
-    uartTransmitDones[id] = fnc
 end
 
 --- Task任务延时函数，只能用于任务函数中
@@ -194,12 +154,12 @@ end
 -- @usage sys.init(1,0)
 function init(mode, lprfnc)
     -- 用户应用脚本中必须定义PROJECT和VERSION两个全局变量，否则会死机重启，如何定义请参考各个demo中的main.lua
-    assert(base.PROJECT and base.PROJECT ~= "" and base.VERSION and base.VERSION ~= "", "Undefine PROJECT or VERSION")
-    base.collectgarbage("setpause", 80)
+    assert(PROJECT and PROJECT ~= "" and VERSION and VERSION ~= "", "Undefine PROJECT or VERSION")
+    collectgarbage("setpause", 80)
     
     -- 设置AT命令的虚拟串口
     uart.setup(uart.ATC, 0, 0, uart.PAR_NONE, uart.STOP_1)
-    print("poweron reason:", rtos.poweron_reason(), base.PROJECT, base.VERSION, SCRIPT_LIB_VER, getCoreVer())
+    print("poweron reason:", rtos.poweron_reason(), PROJECT, VERSION, SCRIPT_LIB_VER, getCoreVer())
     if mode == 1 then
         -- 充电开机
         if rtos.poweron_reason() == rtos.POWERON_CHARGER then
@@ -498,27 +458,11 @@ function run()
                     cb()
                 end
             end
-        --串口数据接收消息
-        elseif msg == rtos.MSG_UART_RXDATA then
-            --AT命令的虚拟串口
-            if msgPara == uart.ATC then
-                handlers.atc()
-            --物理串口
-            else
-                if uartReceives[msgPara] ~= nil then
-                    uartReceives[msgPara]()
-                else
-                    handlers[msg](msg, msgPara)
-                end
-            end
-        --串口发送数据完成消息
-        elseif msg == rtos.MSG_UART_TX_DONE then
-            if uartTransmitDones[msgPara] then
-                uartTransmitDones[msgPara]()
-            end
         --其他消息（音频消息、充电管理消息、按键消息等）
         else
-            handlers[msg](msg, msgPara)
+            handlers[msg](msgPara)
         end
     end
 end
+
+require "clib"

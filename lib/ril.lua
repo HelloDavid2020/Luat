@@ -557,4 +557,4 @@ function sendtransparentdata(data)
 end
 
 --注册“AT命令的虚拟串口数据接收消息”的处理函数
-sys.regmsg("atc", atcreader)
+uart.on(uart.ATC, "receive", atcreader)

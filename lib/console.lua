@@ -97,7 +97,7 @@ function setup(id, baudrate)
     -- 初始化串口
     uart.setup(uart_id, baudrate, 8, uart.PAR_NONE, uart.STOP_1)
     -- 串口收到数据时唤醒console协程
-    sys.regUartReceive(uart_id, function()
+    uart.on(uart_id, "receive", function()
         coroutine.resume(console_task)
     end)
     coroutine.resume(console_task)
