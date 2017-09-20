@@ -111,6 +111,11 @@ local function main_loop()
     end
 end
 
+--- uart.on
+-- @param id 串口id
+-- @param baudrate 串口波特率
+-- @return 无
+-- @usage console.setup(1, 115200)
 function setup(id, baudrate)
     -- 默认串口1
     uart_id = id or 1
