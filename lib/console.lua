@@ -1,14 +1,12 @@
---
--- Created by IntelliJ IDEA.
--- User: 小强
--- Date: 2017/9/15
--- Time: 22:46
--- To change this template use File | Settings | File Templates.
---
-require "sys"
-module(..., package.seeall)
-local uart = require "uart"
+--- 模块功能 luat控制台
+-- @module console
+-- @author 小强
+-- @license MIT
+-- @copyright openLuat.com
+-- @release 2017.9.15
 
+require"ril"
+module(..., package.seeall)
 local uart_id
 local console_task
 
@@ -26,25 +24,59 @@ local function write(s)
     uart.write(uart_id, s)
 end
 
+local function on_wait_event_timeout()
+    coroutine.resume(console_task, "TIEMOUT")
+end
+
+local function wait_event(event, timeout)
+    if timeout then
+        sys.timer_start(on_wait_event_timeout, timeout)
+    end
+
+    while true do
+        local receive_event = coroutine.yield()
+        if receive_event == event then
+            sys.timer_stop(on_wait_event_timeout)
+            return
+        elseif receive_event == "TIMEOUT" then
+            write("WAIT EVENT " .. event .. "TIMEOUT\r\n")
+            return
+        end
+    end
+end
+
 local function main_loop()
     local cache_data = ""
-    
+    local wait_event_flag
+
     -- 定义执行环境，命令行下输入的脚本的print重写到命令行的write
     local execute_env = {
         print = function(...)
-            for i = 1, #arg do
-                arg[i] = tostring(arg[i])
+            for i, v in ipairs(arg) do
+                arg[i] = type(v) == "nil" and "nil" or tostring(v)
             end
             write(table.concat(arg, "\t"))
             write("\r\n")
         end,
+        sendat = function(cmd)
+            ril.request(cmd, nil, function(cmd, success, response, intermediate)
+                if intermediate then
+                    write("\r\n" .. intermediate .. "\r\n")
+                end
+                if response then
+                    write("\r\n" .. response .. "\r\n")
+                end
+                coroutine.resume(console_task, "WAIT_AT_RESPONSE")
+            end, nil)
+            wait_event_flag = "WAIT_AT_RESPONSE"
+        end,
     }
-    setmetatable(execute_env, {__index = _G})
-    
+    setmetatable(execute_env, { __index = _G })
+
     -- 输出提示语
     write("\r\nWelcome to Luat Console\r\n")
-    write("---------------------------------------------------------------\r\n> ")
-    
+    write("\r\n> ")
+
     while true do
         -- 读取输入
         local new_data = read_line("*l")
@@ -53,19 +85,7 @@ local function main_loop()
         -- 拼接之前未成行的剩余数据
         cache_data = cache_data .. new_data
         -- 去掉回车换行
-        local line = string.match(cache_data, "(.+)\r\n*")
-        ---[[调试输入参数部分,不需要时用--即可注释本段
-        write("\n")
-        if line == nil then
-            write("console.lua_60 line value is nothing")
-        elseif line == "" then
-            write("console.lua_62 line value null")
-        else
-            write("console.lua_64 line value :" .. line .."\n")
-            write("console.lua_65 line type :" .. (type(line)))
-        end
-        write("\n")
-        --]]
+        local line = string.match(cache_data, "(.+\r*\n)")
         if line then
             -- 收到一整行的数据 清除缓冲数据
             cache_data = ""
@@ -73,14 +93,18 @@ local function main_loop()
             write("\n")
             -- 用xpcall执行用户输入的脚本，可以捕捉脚本的错误
             xpcall(function()
-                    -- 执行用户输入的脚本
-                    f = assert(loadstring(line))
-                    setfenv(f, execute_env)
-                    f()
+                -- 执行用户输入的脚本
+                local f = loadstring(line)
+                setfenv(f, execute_env)
+                f()
             end,
-            function()-- 错误输出
-                write(debug.traceback())
-            end)
+                function() -- 错误输出
+                    write(debug.traceback())
+                end)
+            if wait_event_flag then
+                wait_event(wait_event_flag)
+                wait_event_flag = nil
+            end
             -- 输出输入提示符
             write("\r\n> ")
         end
