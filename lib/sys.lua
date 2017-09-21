@@ -134,8 +134,8 @@ end
 -- @return result 接收到消息返回true，超时返回false
 -- @return data 接收到消息返回消息参数
 -- @usage result, data = sys.waitUntil("SIM_IND", 120000)
--- @usage if result then print("timeout") end
--- @usage elseif print("received message", data) end
+-- @usage if result then print("received message", data) end
+-- @usage elseif print("timeout") end
 function waitUntil(id, ms)
     subscribe(id, coroutine.running())
     local message, data = wait(ms)
