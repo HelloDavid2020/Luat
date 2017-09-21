@@ -9,7 +9,12 @@ function taskb(v1, v2)
     print("taskb start", v1, v2)
     while true do
         print("taskb delay", count)
-        sys.wait(1000)
+        result, data = sys.waitUntil("SIM_IND", 5000)
+        if result then
+            print('receive SIM_IND')
+        else
+            print('wait SIM_IND timeout')
+        end
         count = count + 2
     end
 end
@@ -134,17 +139,17 @@ function taskn(v1, v2)
     end
 end
 
-
+--
 sys.taskInit(taskb, "b", "c")
-sys.taskInit(taskc, "c", "c")
-sys.taskInit(taskd, "d", "c")
-sys.taskInit(taske, "e", "c")
-sys.taskInit(taskf, "f", "c")
-sys.taskInit(taskg, "g", "c")
-sys.taskInit(taskh, "h", "c")
-sys.taskInit(taski, "i", "c")
-sys.taskInit(taskj, "j", "c")
-sys.taskInit(taskk, "k", "c")
-sys.taskInit(taskl, "l", "c")
-sys.taskInit(taskm, "m", "c")
-sys.taskInit(taskn, "n", "c")
+--sys.taskInit(taskc, "c", "c")
+--sys.taskInit(taskd, "d", "c")
+--sys.taskInit(taske, "e", "c")
+--sys.taskInit(taskf, "f", "c")
+--sys.taskInit(taskg, "g", "c")
+--sys.taskInit(taskh, "h", "c")
+--sys.taskInit(taski, "i", "c")
+--sys.taskInit(taskj, "j", "c")
+--sys.taskInit(taskk, "k", "c")
+--sys.taskInit(taskl, "l", "c")
+--sys.taskInit(taskm, "m", "c")
+--sys.taskInit(taskn, "n", "c")

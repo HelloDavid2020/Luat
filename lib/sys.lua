@@ -14,16 +14,17 @@ SCRIPT_LIB_VER = "2.0.0"
 CORE_MIN_VER = "Luat_V0009_8955"
 
 -- TaskID最大值
-local TASK_ID_MAX = 20
+local TASK_TIMER_ID_MAX = 0x1FFFFFFF
 -- msgId 最大值(请勿修改否则会发生msgId碰撞的危险)
-local MSG_ID_MAX = 0x7FFFFFFF
+local MSG_TIMER_ID_MAX = 0x7FFFFFFF
 
 -- 任务定时器id
-local taskId = 0
+local taskTimerId = 0
 -- 消息定时器id
-local msgId = TASK_ID_MAX
+local msgId = TASK_TIMER_ID_MAX
 -- 定时器id表
 local timerPool = {}
+local taskTimerPool = {}
 --消息定时器参数表
 local para = {}
 
@@ -109,18 +110,37 @@ function wait(ms)
     -- 选一个未使用的定时器ID给该任务线程
     while true do
         -- 防止taskId超过30
-        if taskId >= TASK_ID_MAX then taskId = 0 end
-        taskId = taskId + 1
-        if timerPool[taskId] == nil then
-            timerPool[taskId] = coroutine.running()
-            break
-        end
+        if taskTimerId >= TASK_TIMER_ID_MAX then taskTimerId = 0 end
+        taskTimerId = taskTimerId + 1
+        taskTimerPool[coroutine.running()] = taskTimerId
+        timerPool[taskTimerId] = coroutine.running()
+        break
     end
     -- 调用core的rtos定时器
-    if 1 ~= rtos.timer_start(taskId, ms) then print("rtos.timer_start error") return end
+    if 1 ~= rtos.timer_start(taskTimerId, ms) then print("rtos.timer_start error") return end
     -- 挂起调用的任务线程
-    coroutine.yield()
-    return 1
+    local message, data = coroutine.yield()
+    if message then
+        rtos.timer_stop(taskTimerId)
+        taskTimerPool[coroutine.running()] = nil
+        timerPool[taskTimerId] = nil
+        return message, data
+    end
+end
+
+--- Task任务的条件等待函数（包括事件消息和定时器消息等条件），只能用于任务函数中。
+-- @param id 消息ID
+-- @number ms 等待超时时间，单位ms，最大等待126322567毫秒
+-- @return result 接收到消息返回true，超时返回false
+-- @return data 接收到消息返回消息参数
+-- @usage result, data = sys.waitUntil("SIM_IND", 120000)
+-- @usage if result then print("timeout") end
+-- @usage elseif print("received message", data) end
+function waitUntil(id, ms)
+    subscribe(id, coroutine.running())
+    local message, data = wait(ms)
+    unsubscribe(id, coroutine.running())
+    return message ~= nil, data
 end
 
 --- 创建一个任务线程,在模块最末行调用该函数并注册模块中的任务函数，main.lua导入该模块即可
@@ -229,7 +249,7 @@ function timer_start(fnc, ms, ...)
     end
     -- 为定时器申请ID，ID值 1-20 留给任务，20-30留给消息专用定时器
     while true do
-        if msgId >= MSG_ID_MAX then msgId = TASK_ID_MAX end
+        if msgId >= MSG_TIMER_ID_MAX then msgId = TASK_TIMER_ID_MAX end
         msgId = msgId + 1
         if timerPool[msgId] == nil then
             timerPool[msgId] = fnc
@@ -260,7 +280,7 @@ local pendingUnsubscribeRequests = {}
 -- @param callback 消息回调处理
 -- @usage subscribe("NET_STATUS_IND", callback)
 function subscribe(id, callback)
-    if type(id) ~= "string" or type(callback) ~= "function" then
+    if type(id) ~= "string" or (type(callback) ~= "function" and type(callback) ~= "thread") then
         print("warning: sys.subscribe invalid parameter", id, callback)
         return
     end
@@ -272,7 +292,7 @@ end
 -- @param callback 消息回调处理
 -- @usage unsubscribe("NET_STATUS_IND", callback)
 function unsubscribe(id, callback)
-    if type(id) ~= "string" or type(callback) ~= "function" then
+    if type(id) ~= "string" or (type(callback) ~= "function" and type(callback) ~= "thread") then
         print("warning: sys.unsubscribe invalid parameter", id, callback)
         return
     end
@@ -297,6 +317,7 @@ local function dispatch()
         end
         table.insert(subscribers[id], callback)
     end
+    pendingSubscribeReqeusts = {}
 
     for _, req in ipairs(pendingUnsubscribeRequests) do
         local id, callback = req[1], req[2]
@@ -307,6 +328,7 @@ local function dispatch()
             end
         end
     end
+    pendingUnsubscribeRequests = {}
 
     while true do
         if #messageQueue == 0 then
@@ -315,7 +337,11 @@ local function dispatch()
         local message = table.remove(messageQueue, 1)
         if subscribers[message[1]] then
             for _, callback in ipairs(subscribers[message[1]]) do
-                callback(unpack(message, 2, #message))
+                if type(callback) == "function" then
+                    callback(unpack(message, 2, #message))
+                elseif type(callback) == "thread" then
+                    coroutine.resume(callback, message[1], { unpack(message, 2, #message) })
+                end
             end
         end
     end
@@ -345,15 +371,15 @@ function run()
         -- 阻塞读取外部消息
         local msg, param = rtos.receive(rtos.INF_TIMEOUT)
         -- 判断是否为定时器消息，并且消息是否注册
-        if msg == rtos.MSG_TIMER and timerPool[param] ~= nil then
-            if param < 21 then
+        if msg == rtos.MSG_TIMER and timerPool[param] then
+            if param < TASK_TIMER_ID_MAX then
                 print("timerPool[msgPara] is task ----->", param, timerPool[param])
-                -- 根据定时器表获得任务线程ID
-                local co = timerPool[param]
-                -- 清除定时器ID值
+                local taskId = timerPool[param]
                 timerPool[param] = nil
-                -- 运行该线程
-                coroutine.resume(co)
+                if taskTimerPool[taskId] == param then
+                    taskTimerPool[taskId] = nil
+                    coroutine.resume(taskId)
+                end
             else
                 local cb = timerPool[param]
                 print("timerPool[msgPara] is msg ---->", param, timerPool[param])
