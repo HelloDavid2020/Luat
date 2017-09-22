@@ -1,138 +1,72 @@
---[[
-模块名称：引脚配置管理
-模块功能：引脚输出、输入、中断的配置和管理
-模块最后修改时间：2017.03.04
-]]
+--- 模块功能：GPIO 功能配置，包括输入输出IO和上升下降沿中断IO
+-- @module pins
+-- @author 稀饭放姜
+-- @license MIT
+-- @copyright openLuat
+-- @release 2017.09.22
 module(..., package.seeall)
+local base = _G
+local assert = base.assert
 
-local allpins = {}
+-- 中断IO列表
+local itPins = {}
 
---[[
-函数名：init
-功能  ：初始化allpins表中的所有引脚
-参数  ：无
-返回值：无
-]]
-local function init()
-    for _, v in ipairs(allpins) do
-        if v.init == false then
-            -- 不做初始化
-            elseif v.ptype == nil or v.ptype == "GPIO" then
-            v.inited = true
-            pio.pin.setdir(v.dir or pio.OUTPUT, v.pin)
-            --[[if v.dir == nil or v.dir == pio.OUTPUT then
-            set(v.defval or false,v)
-            else]]
-            if v.dir == pio.INPUT or v.dir == pio.INT then
-                v.val = pio.pin.getval(v.pin) == v.valid
-            end
-            --[[elseif v.set then
-            set(v.defval or false,v)]]
-            end
+--- 添加中断IO函数
+function addIt(pin, rim)
+    assert(pin ~= nil, "pins.addIt first param is nil !")
+    assert(pin == "POS" or rim == "NEG", "pins.addit last param is fail !")
+    table.insert(itPins, {pin, rim})
+end
+
+--- 设置GPIO_xx为输入模式
+-- @param pin ，参数为pio.P0_1-31 和 pio_P1_1-31 (IO >= 32 and IO - 31)
+-- @return function ,返回一个函数，这个函数可以获取GPIO_xx的当前状态
+-- @usage key = setIn(pio.P1_1) ，表示设置编号32的IO为输入模式，别名key()。
+-- @usage local ledStatus = key()
+function setIn(pin)
+    assert(pin ~= nil, "pins.setIn first param is nil !")
+    pio.pin.close(pin)
+    pio.pin.setdir(pio.INPUT, pin)
+    return function()
+        return pio.pin.getval(pin)
     end
 end
 
---[[
-函数名：reg
-功能  ：注册一个或者多个PIN脚的配置，并且初始化PIN脚
-参数  ：
-cfg1：PIN脚配置，table类型
-...：0个或多个PIN脚配置
-返回值：无
-]]
-function reg(cfg1, ...)
-    table.insert(allpins, cfg1)
-    local i
-    for i = 1, arg.n do
-        table.insert(allpins, unpack(arg, i, i))
-        print("reg", unpack(arg, i, i).pin)
+--- 设置GPIO_xx为输出模式
+-- @param pin ，参数为pio.P0_1-31 和 pio_P1_1-31 (IO >= 32 and IO - 31)
+-- @number val，初始默认电平：0 为低电平，非0为高电平
+-- @return function ,返回一个函数，该函数接受一个参数用来设置IO的电平
+-- @usage led = setOut(pio.P1_1,0) ，表示设置编号32的IO为输出模式，别名led()，默认输出低电平。
+-- @usage led(1) -- 设置led输出高电平
+function setOut(pin, val)
+    assert(pin ~= nil, "pins.setIn first param is nil !")
+    pio.pin.close(pin)
+    pio.pin.setdir(pio.OUTPUT, pin)
+    pio.pin.setval(val, pin)
+    return function(v)
+        pio.pin.setval(v, pin)
     end
-    init()
 end
 
---[[
-函数名：dereg
-功能  ：解注册一个或者多个PIN脚的配置，并且关闭PIN脚
-参数  ：
-cfg1：PIN脚配置，table类型
-...：0个或多个PIN脚配置
-返回值：无
-]]
-function dereg(cfg1, ...)
-    pio.pin.close(cfg1.pin)
-    for k, v in pairs(allpins) do
-        if v.pin == cfg1.pin then
-            table.remove(allpins, k)
+--- 自适应GPIO模式
+-- @param pin ，参数为pio.P0_1-31 和 pio_P1_1-31 (IO >= 32 and IO - 31)
+-- @number val，初始默认电平：0 为低电平，非0为高电平
+-- @string it, 中断IO的上升沿"POS" 或 下降沿"NEG"
+-- @return function ,返回一个函数，该函数接受一个参数用来设置IO的电平
+-- @usage key = setup(pio.P1_1,0,"NEG") ，配置Key为中断IO，下降沿触发中断。用key()获取电平值
+-- @usage key() -- 获取当前中断IO的电平值
+function setup(pin, val, it)
+    if val ~= nil then
+        if it == "POS" or it == "NEG" then
+            addIt(pin, it)
+            return setIn(pin)
+        else
+            return setOut(pin, val)
         end
-    end
-    
-    for k, v in pairs(allpins) do
-        pio.pin.close(unpack(arg, i, i).pin)
-        if v.pin == unpack(arg, i, i).pin then
-            table.remove(allpins, k)
-        end
+    else
+        return setIn(pin)
     end
 end
-
---[[
-函数名：get
-功能  ：读取输入或中断型引脚的电平状态
-参数  ：
-p： 引脚的名字
-返回值：如果引脚的电平和引脚配置的valid的值一致，返回true；否则返回false
-]]
-function get(p)
-    return pio.pin.getval(p.pin) == p.valid
-end
-
---[[
-函数名：set
-功能  ：设置输出型引脚的电平状态
-参数  ：
-bval：true表示和配置的valid值一样的电平状态，false表示相反状态
-p： 引脚的名字
-返回值：无
-]]
-function set(bval, p)
-    p.val = bval
-    
-    if not p.inited and (p.ptype == nil or p.ptype == "GPIO") then
-        p.inited = true
-        pio.pin.setdir(p.dir or pio.OUTPUT, p.pin)
-    end
-    
-    if p.set then p.set(bval, p) return end
-    
-    if p.ptype ~= nil and p.ptype ~= "GPIO" then print("unknwon pin type:", p.ptype) return end
-    
-    local valid = p.valid == 0 and 0 or 1 -- 默认高有效
-    local notvalid = p.valid == 0 and 1 or 0
-    local val = bval == true and valid or notvalid
-    
-    if p.pin then pio.pin.setval(val, p.pin) end
-end
-
---[[
-函数名：setdir
-功能  ：设置引脚的方向
-参数  ：
-dir：pio.OUTPUT、pio.OUTPUT1、pio.INPUT或者pio.INT，详细意义参考本文件上面的“dir值定义”
-p： 引脚的名字
-返回值：无
-]]
-function setdir(dir, p)
-    if p and p.ptype == nil or p.ptype == "GPIO" then
-        if not p.inited then
-            p.inited = true
-        end
-        if p.pin then
-            pio.pin.close(p.pin)
-            pio.pin.setdir(dir, p.pin)
-            p.dir = dir
-        end
-    end
-end
-
 
 --[[
 函数名：intmsg
@@ -142,17 +76,16 @@ msg：table类型；msg.int_id：中断电平类型，cpu.INT_GPIO_POSEDGE表示
 返回值：无
 ]]
 local function intmsg(msg)
-    local status = 0
+    local status = "NEG"
     
-    if msg.int_id == cpu.INT_GPIO_POSEDGE then status = 1 end
+    if msg.int_id == cpu.INT_GPIO_POSEDGE then status = "POS" end
     
-    for _, v in ipairs(allpins) do
-        if v.dir == pio.INT and msg.int_resnum == v.pin then
-            v.val = v.valid == status
-            if v.intcb then v.intcb(v.val) end
+    for _, v in ipairs(itPins) do
+        if v[1] == msg.int_resnum and v[2] == status then
+            sys.publish("INT_GPIO_PRESS", v[1], v[2])
             return
         end
     end
 end
 --注册引脚中断的处理函数
-sys.regmsg(rtos.MSG_INT, intmsg)
+rtos.on(rtos.MSG_INT, intmsg)
