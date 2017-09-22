@@ -30,11 +30,15 @@
   <li><a href="../index.html">Index</a></li>
 </ul>
 
+<h2>Contents</h2>
+<ul>
+<li><a href="#Functions">Functions</a></li>
+</ul>
 
 
 <h2>Modules</h2>
 <ul class="nowrap">
-  <li><a href="../modules/clib.html">clib</a></li>
+  <li><strong>clib</strong></li>
   <li><a href="../modules/console.html">console</a></li>
   <li><a href="../modules/led.html">led</a></li>
   <li><a href="../modules/link.html">link</a></li>
@@ -44,7 +48,7 @@
   <li><a href="../modules/sim.html">sim</a></li>
   <li><a href="../modules/sys.html">sys</a></li>
   <li><a href="../modules/wdt.html">wdt</a></li>
-  <li><strong>test</strong></li>
+  <li><a href="../modules/test.html">test</a></li>
 </ul>
 <h2>Manual</h2>
 <ul class="nowrap">
@@ -55,25 +59,71 @@
 
 <div id="content">
 
-<h1>Module <code>test</code></h1>
-<p>模块功能：testTask</p>
+<h1>Module <code>clib</code></h1>
+<p>模块功能 完善luat的c库接口</p>
 <p>
 
 </p>
     <h3>Info:</h3>
     <ul>
-        <li><strong>Copyright</strong>: openLuat</li>
-        <li><strong>Release</strong>: 2017.02.17</li>
+        <li><strong>Copyright</strong>: openLuat.com</li>
+        <li><strong>Release</strong>: 2017.9.20</li>
         <li><strong>License</strong>: MIT</li>
-        <li><strong>Author</strong>: openLuat</li>
+        <li><strong>Author</strong>: 小强</li>
     </ul>
 
 
+<h2><a href="#Functions">Functions</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#uart.on">uart.on (id, event, callback)</a></td>
+	<td class="summary">uart.on</td>
+	</tr>
+</table>
 
 <br/>
 <br/>
 
 
+    <h2 class="section-header "><a name="Functions"></a>Functions</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "uart.on"></a>
+    <strong>uart.on (id, event, callback)</strong>
+    </dt>
+    <dd>
+    uart.on
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">id</span>
+         uart id: (uart.ATC, 1, 2)
+        </li>
+        <li><span class="parameter">event</span>
+         uart event: "recieve", "sent"
+        </li>
+        <li><span class="parameter">callback</span>
+         uart event callback function
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        无
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">uart.on()</pre>
+    </ul>
+
+</dd>
+</dl>
 
 
 </div> <!-- id="content" -->

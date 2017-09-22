@@ -38,7 +38,10 @@
 
 <h2>Modules</h2>
 <ul class="nowrap">
+  <li><a href="../modules/clib.html">clib</a></li>
+  <li><a href="../modules/console.html">console</a></li>
   <li><a href="../modules/led.html">led</a></li>
+  <li><a href="../modules/link.html">link</a></li>
   <li><a href="../modules/log.html">log</a></li>
   <li><a href="../modules/net.html">net</a></li>
   <li><a href="../modules/ril.html">ril</a></li>
@@ -97,20 +100,12 @@
 	<td class="summary">开启或者关闭print的打印输出功能</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#regmsg">regmsg (id, handler)</a></td>
-	<td class="summary">注册“除定时器消息、物理串口消息外的其他外部消息（例如AT命令的虚拟串口数据接收消息、音频消息、充电管理消息、按键消息等）”的处理函数</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#regUartReceive">regUartReceive (id, fnc)</a></td>
-	<td class="summary">注册物理串口的数据接收处理函数</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#regUartTransmitDone">regUartTransmitDone (id, fnc)</a></td>
-	<td class="summary">注册物理串口的数据发送完成处理函数</td>
-	</tr>
-	<tr>
 	<td class="name" nowrap><a href="#wait">wait (ms)</a></td>
 	<td class="summary">Task任务延时函数，只能用于任务函数中</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#waitUntil">waitUntil (id, ms)</a></td>
+	<td class="summary">Task任务的条件等待函数（包括事件消息和定时器消息等条件），只能用于任务函数中。</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#taskInit">taskInit (fun, ...)</a></td>
@@ -125,16 +120,20 @@
 	<td class="summary">关闭定时器</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#regapp">regapp (...)</a></td>
-	<td class="summary">注册App，该类应用需要来自rtos或lua层的消息唤醒回调，用任务轮询处理不方便的时候使用。当你需要的时候你就知道为什么用它了。</td>
+	<td class="name" nowrap><a href="#subscribe">subscribe (id, callback)</a></td>
+	<td class="summary">订阅消息</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#deregapp">deregapp (id)</a></td>
-	<td class="summary">解注册app</td>
+	<td class="name" nowrap><a href="#unsubscribe">unsubscribe (id, callback)</a></td>
+	<td class="summary">取消订阅消息</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#dispatch">dispatch (...)</a></td>
-	<td class="summary">产生内部消息，存储在内部消息队列中</td>
+	<td class="name" nowrap><a href="#publish">publish (...)</a></td>
+	<td class="summary">发布内部消息，存储在内部消息队列中</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#rtos.on">rtos.on (id, handler)</a></td>
+	<td class="summary">注册rtos消息回调处理函数</td>
 	</tr>
 </table>
 
@@ -211,8 +210,8 @@
         <li><span class="parameter">v</span>
             <span class="types"><span class="type">number</span></span>
          工作模式，默认完整模式\
-SIMPLE<em>MODE：简单模式，默认不会开启“每一分钟产生一个内部消息”、“定时查询csq”、“定时查询ceng”的功能\
-FULL</em>MODE：完整模式，默认会开启“每一分钟产生一个内部消息”、“定时查询csq”、“定时查询ceng”的功能
+ SIMPLE<em>MODE：简单模式，默认不会开启“每一分钟产生一个内部消息”、“定时查询csq”、“定时查询ceng”的功能\
+ FULL</em>MODE：完整模式，默认会开启“每一分钟产生一个内部消息”、“定时查询csq”、“定时查询ceng”的功能
         </li>
     </ul>
 
@@ -296,7 +295,7 @@ FULL</em>MODE：完整模式，默认会开启“每一分钟产生一个内部�
         <li><span class="parameter">baudrate</span>
             <span class="types"><span class="type">number</span></span>
         ：number类型，uartid不为nil时，此参数才有意义，表示波特率，默认115200 \
-支持1200,2400,4800,9600,14400,19200,28800,38400,57600,76800,115200,230400,460800,576000,921600,1152000,4000000
+ 支持1200,2400,4800,9600,14400,19200,28800,38400,57600,76800,115200,230400,460800,576000,921600,1152000,4000000
         </li>
     </ul>
 
@@ -311,105 +310,6 @@ FULL</em>MODE：完整模式，默认会开启“每一分钟产生一个内部�
     <h3>Usage:</h3>
     <ul>
         <pre class="example">sys.openTrace(<span class="number">1</span>,<span class="keyword">nil</span>,<span class="number">921600</span>)</pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "regmsg"></a>
-    <strong>regmsg (id, handler)</strong>
-    </dt>
-    <dd>
-    注册“除定时器消息、物理串口消息外的其他外部消息（例如AT命令的虚拟串口数据接收消息、音频消息、充电管理消息、按键消息等）”的处理函数
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">id</span>
-            <span class="types"><span class="type">number</span></span>
-         消息类型id
-        </li>
-        <li><span class="parameter">handler</span>
-         消息处理函数
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        无
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">regmsg(rtos.MSG_KEYPAD,keymsg) <span class="comment">-- keymsg() 是键盘处理函数</span></pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "regUartReceive"></a>
-    <strong>regUartReceive (id, fnc)</strong>
-    </dt>
-    <dd>
-    注册物理串口的数据接收处理函数
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">id</span>
-            <span class="types"><span class="type">number</span></span>
-        ：物理串口号，1表示UART1，2表示UART2
-        </li>
-        <li><span class="parameter">fnc</span>
-        ：数据接收处理函数名
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        无
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">regUartReceive(uart.ATC,atc)</pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "regUartTransmitDone"></a>
-    <strong>regUartTransmitDone (id, fnc)</strong>
-    </dt>
-    <dd>
-    注册物理串口的数据发送完成处理函数
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">id</span>
-            <span class="types"><span class="type">number</span></span>
-        ：物理串口号，1表示UART1，2表示UART2
-        </li>
-        <li><span class="parameter">fnc</span>
-        ：调用uart.write接口发送数据，数据发送完成后的回调函数
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        无
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">regUartTransmitDone(<span class="number">1</span>,uart)</pre>
     </ul>
 
 </dd>
@@ -444,6 +344,43 @@ FULL</em>MODE：完整模式，默认会开启“每一分钟产生一个内部�
 
 </dd>
     <dt>
+    <a name = "waitUntil"></a>
+    <strong>waitUntil (id, ms)</strong>
+    </dt>
+    <dd>
+    Task任务的条件等待函数（包括事件消息和定时器消息等条件），只能用于任务函数中。
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">id</span>
+         消息ID
+        </li>
+        <li><span class="parameter">ms</span>
+            <span class="types"><span class="type">number</span></span>
+         等待超时时间，单位ms，最大等待126322567毫秒
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+        <li>
+        result 接收到消息返回true，超时返回false</li>
+        <li>
+        data 接收到消息返回消息参数</li>
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <li><pre class="example">result, data = sys.waitUntil(<span class="string">"SIM_IND"</span>, <span class="number">120000</span>)</pre></li>
+        <li><pre class="example"><span class="keyword">if</span> result <span class="keyword">then</span> <span class="global">print</span>(<span class="string">"received message"</span>, data) <span class="keyword">end</span></pre></li>
+        <li><pre class="example"><span class="keyword">elseif</span> <span class="global">print</span>(<span class="string">"timeout"</span>) <span class="keyword">end</span></pre></li>
+    </ul>
+
+</dd>
+    <dt>
     <a name = "taskInit"></a>
     <strong>taskInit (fun, ...)</strong>
     </dt>
@@ -454,10 +391,10 @@ FULL</em>MODE：完整模式，默认会开启“每一分钟产生一个内部�
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">fun</span>
-          任务函数名，用于resume唤醒时调用
+         任务函数名，用于resume唤醒时调用
         </li>
         <li><span class="parameter">...</span>
-          任务函数fun的可变参数
+         任务函数fun的可变参数
         </li>
     </ul>
 
@@ -540,70 +477,65 @@ FULL</em>MODE：完整模式，默认会开启“每一分钟产生一个内部�
 
 </dd>
     <dt>
-    <a name = "regapp"></a>
-    <strong>regapp (...)</strong>
+    <a name = "subscribe"></a>
+    <strong>subscribe (id, callback)</strong>
     </dt>
     <dd>
-    注册App，该类应用需要来自rtos或lua层的消息唤醒回调，用任务轮询处理不方便的时候使用。当你需要的时候你就知道为什么用它了。
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">...</span>
-         可变参数：以函数+参数...注册的方式，以table注册的方式
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        table ,返回app函数名，参数
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <li><pre class="example">regapp(fncname,<span class="string">"MSG1"</span>,<span class="string">"MSG2"</span>,<span class="string">"MSG3"</span>) 注册形式为：{procer=arg[<span class="number">1</span>],<span class="string">"MSG1"</span>,<span class="string">"MSG2"</span>,<span class="string">"MSG3"</span>}</pre></li>
-        <li><pre class="example">regapp({MSG1=fnc1,MSG2=fnc2,MSG3=fnc3}) 注册形式为：形式为{MSG1=fnc1,MSG2=fnc2,MSG3=fnc3}</pre></li>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "deregapp"></a>
-    <strong>deregapp (id)</strong>
-    </dt>
-    <dd>
-    解注册app
+    订阅消息
 
 
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">id</span>
-        ：app的id，id共有两种方式，一种是函数名，另一种是table名
+         消息id
+        </li>
+        <li><span class="parameter">callback</span>
+         消息回调处理
         </li>
     </ul>
 
-    <h3>Returns:</h3>
-    <ol>
-
-        无
-    </ol>
 
 
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example">deregapp(app)</pre>
+        <pre class="example">subscribe(<span class="string">"NET_STATUS_IND"</span>, callback)</pre>
     </ul>
 
 </dd>
     <dt>
-    <a name = "dispatch"></a>
-    <strong>dispatch (...)</strong>
+    <a name = "unsubscribe"></a>
+    <strong>unsubscribe (id, callback)</strong>
     </dt>
     <dd>
-    产生内部消息，存储在内部消息队列中
+    取消订阅消息
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">id</span>
+         消息id
+        </li>
+        <li><span class="parameter">callback</span>
+         消息回调处理
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">unsubscribe(<span class="string">"NET_STATUS_IND"</span>, callback)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "publish"></a>
+    <strong>publish (...)</strong>
+    </dt>
+    <dd>
+    发布内部消息，存储在内部消息队列中
 
 
     <h3>Parameters:</h3>
@@ -623,7 +555,40 @@ FULL</em>MODE：完整模式，默认会开启“每一分钟产生一个内部�
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example">dispatch(app)</pre>
+        <pre class="example">publish(<span class="string">"NET_STATUS_IND"</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "rtos.on"></a>
+    <strong>rtos.on (id, handler)</strong>
+    </dt>
+    <dd>
+    注册rtos消息回调处理函数
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">id</span>
+            <span class="types"><span class="type">number</span></span>
+         消息类型id
+        </li>
+        <li><span class="parameter">handler</span>
+         消息处理函数
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        无
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">rtos.on(rtos.MSG_KEYPAD, <span class="keyword">function</span>(param) handle keypad message <span class="keyword">end</span>)</pre>
     </ul>
 
 </dd>
@@ -634,7 +599,7 @@ FULL</em>MODE：完整模式，默认会开启“每一分钟产生一个内部�
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2017-09-19 16:50:09 </i>
+<i style="float:right;">Last updated 2017-09-22 20:44:05 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>

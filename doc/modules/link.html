@@ -1,0 +1,277 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Luat-Lib-API</title>
+    <link rel="stylesheet" href="../ldoc_pale.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>LuatDoc</h1>
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Functions">Functions</a></li>
+</ul>
+
+
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/clib.html">clib</a></li>
+  <li><a href="../modules/console.html">console</a></li>
+  <li><a href="../modules/led.html">led</a></li>
+  <li><strong>link</strong></li>
+  <li><a href="../modules/log.html">log</a></li>
+  <li><a href="../modules/net.html">net</a></li>
+  <li><a href="../modules/ril.html">ril</a></li>
+  <li><a href="../modules/sim.html">sim</a></li>
+  <li><a href="../modules/sys.html">sys</a></li>
+  <li><a href="../modules/wdt.html">wdt</a></li>
+  <li><a href="../modules/test.html">test</a></li>
+</ul>
+<h2>Manual</h2>
+<ul class="nowrap">
+  <li><a href="../manual/readme.md.html">readme</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Module <code>link</code></h1>
+<p>数据链路激活、SOCKET管理(创建、连接、数据收发、状态维护)</p>
+<p>
+
+</p>
+    <h3>Info:</h3>
+    <ul>
+        <li><strong>Copyright</strong>: openLuat.com</li>
+        <li><strong>Release</strong>: 2017.9.20</li>
+        <li><strong>License</strong>: MIT</li>
+        <li><strong>Author</strong>: 稀饭放姜、小强</li>
+    </ul>
+
+
+<h2><a href="#Functions">Functions</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#setApn">setApn (apn, user, pwd)</a></td>
+	<td class="summary">设置APN的参数</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#getApn">getApn ()</a></td>
+	<td class="summary">获取APN的名称</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#setReconnInterval">setReconnInterval (flag, interval)</a></td>
+	<td class="summary">设置“socket连接超时没有应答”的控制参数</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#activatePdp">activatePdp ()</a></td>
+	<td class="summary">设置PDP并激活IP服务</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#connectionTask">connectionTask ()</a></td>
+	<td class="summary">GPRS网络IP服务连接处理任务
+ function connectionTask()</p>
+<pre><code> -- 每隔2000ms查询1次GPRS附着状态，直到附着成功。
+ while ipStatus ~= "IP START" do
+     -- 不是飞行模式的时候查询GPRS附着状态
+     if not flyMode then ril.request("AT+CGATT?", nil, cgattrsp) end
+     sys.wait(2000)
+ end
+ -- 'ril.regrsp("+CIICR", rsp)'回调rsp函数，并返回IP服务激活结果
+ -- i是超时计数，每次2秒
+ local i = 1
+ while ipStatus ~= "IP GPRSACT" do
+     if i &gt;= 60 then
+         sys.restart("link.connectionTask is reboot for :\t activatePDP is fail!")
+     else
+         i = i + 1
+     end
+     sys.wait(2000)
+ end
+ --获取IP地址，地址获取成功后，IP网络状态会切换为"IP STATUS"
+ ril.request("AT+CIFSR")
+ --查询IP网络状态
+ ril.request("AT+CIPSTATUS")
+</code></pre>
+<p> end</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header "><a name="Functions"></a>Functions</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "setApn"></a>
+    <strong>setApn (apn, user, pwd)</strong>
+    </dt>
+    <dd>
+    设置APN的参数
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">apn</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        , APN的名字
+        </li>
+        <li><span class="parameter">user</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        , APN登陆用户名
+        </li>
+        <li><span class="parameter">pwd</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        ,  APN登陆用户密码
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "getApn"></a>
+    <strong>getApn ()</strong>
+    </dt>
+    <dd>
+    获取APN的名称
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        string, APN的名字
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "setReconnInterval"></a>
+    <strong>setReconnInterval (flag, interval)</strong>
+    </dt>
+    <dd>
+    设置“socket连接超时没有应答”的控制参数
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">flag</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        ,"restart" or "reconn"
+        </li>
+        <li><span class="parameter">interval</span>
+            <span class="types"><span class="type">number</span></span>
+        ,超时时间ms
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        无
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "activatePdp"></a>
+    <strong>activatePdp ()</strong>
+    </dt>
+    <dd>
+    设置PDP并激活IP服务
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        无
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "connectionTask"></a>
+    <strong>connectionTask ()</strong>
+    </dt>
+    <dd>
+    GPRS网络IP服务连接处理任务
+ function connectionTask()</p>
+<pre><code> -- 每隔2000ms查询1次GPRS附着状态，直到附着成功。
+ while ipStatus ~= "IP START" do
+     -- 不是飞行模式的时候查询GPRS附着状态
+     if not flyMode then ril.request("AT+CGATT?", nil, cgattrsp) end
+     sys.wait(2000)
+ end
+ -- 'ril.regrsp("+CIICR", rsp)'回调rsp函数，并返回IP服务激活结果
+ -- i是超时计数，每次2秒
+ local i = 1
+ while ipStatus ~= "IP GPRSACT" do
+     if i &gt;= 60 then
+         sys.restart("link.connectionTask is reboot for :\t activatePDP is fail!")
+     else
+         i = i + 1
+     end
+     sys.wait(2000)
+ end
+ --获取IP地址，地址获取成功后，IP网络状态会切换为"IP STATUS"
+ ril.request("AT+CIFSR")
+ --查询IP网络状态
+ ril.request("AT+CIPSTATUS")
+</code></pre>
+<p> end
+
+
+
+
+
+
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
+<i style="float:right;">Last updated 2017-09-22 20:44:05 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>
