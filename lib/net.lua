@@ -479,5 +479,3 @@ ril.request("AT+CREG?")
 ril.request("AT+CENG=1,1")
 --重置当前小区和临近小区信息表
 resetCellInfo()
---8秒后查询第一次csq
-startQueryAll(8 * 1000, 600 * 1000)

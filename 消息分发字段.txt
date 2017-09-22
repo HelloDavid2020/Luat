@@ -1,0 +1,15 @@
+link.cgattrsp()分发
+    sys.dispatch("NET_GPRS_READY",false or true) --> GPRS附着状态 true 为成功，false为失败
+
+
+
+
+
+ipStatus ： 状态表
+    "IP INITIAL"
+    "IP START"
+    "IP CONFIG"
+    "IP GPRSACT"
+    "IP PROCESSING"
+    "IP STATUS"
+    

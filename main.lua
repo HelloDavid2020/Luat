@@ -4,7 +4,10 @@
 PROJECT = "DEMO_TASK"
 VERSION = "2.0.0"
 require "sys"
+-- 加载GSM
 require "net"
+--8秒后查询第一次csq
+net.startQueryAll(8 * 1000, 600 * 1000)
 -- 控制台
 require "console"
 console.setup(1, 115200)

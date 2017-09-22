@@ -105,46 +105,48 @@ function taskk(v1, v2)
 end
 
 function taskl(v1, v2)
-    local count = 2
+    local count = 0
     print("taskl start", v1, v2)
     while true do
         print("taskl delay", count)
         sys.wait(11000)
-        count = count + 2
+        count = count + 1
     end
 end
 
 function taskm(v1, v2)
-    local count = 2
+    local count = 0
     print("taskm start", v1, v2)
     while true do
         print("taskm delay", count)
-        sys.wait(12000)
-        count = count + 2
+        sys.wait(60000)
+        count = count + 1
+        sys.publish("TEST_WAIT_UNTIL")
     end
 end
 
 function taskn(v1, v2)
-    local count = 2
-    print("taskn start", v1, v2)
+    local count = 1
+    print("taskn waitUntil is start ! ------------------------------")
+    sys.waitUntil("TEST_WAIT_UNTIL", 6000000, function()print("taskn waitUntil is running! #########################") end)
     while true do
         print("taskn delay", count)
-        sys.wait(13000)
-        count = count + 2
+        sys.wait(1000)
+        count = count + 1
     end
 end
 
 
-sys.taskInit(taskb, "b", "c")
-sys.taskInit(taskc, "c", "c")
-sys.taskInit(taskd, "d", "c")
-sys.taskInit(taske, "e", "c")
-sys.taskInit(taskf, "f", "c")
-sys.taskInit(taskg, "g", "c")
-sys.taskInit(taskh, "h", "c")
-sys.taskInit(taski, "i", "c")
-sys.taskInit(taskj, "j", "c")
-sys.taskInit(taskk, "k", "c")
-sys.taskInit(taskl, "l", "c")
+-- sys.taskInit(taskb, "b", "c")
+-- sys.taskInit(taskc, "c", "c")
+-- sys.taskInit(taskd, "d", "c"1
+-- sys.taskInit(taske, "e", "c")
+-- sys.taskInit(taskf, "f", "c")
+-- sys.taskInit(taskg, "g", "c")
+-- sys.taskInit(taskh, "h", "c")
+-- sys.taskInit(taski, "i", "c")
+-- sys.taskInit(taskj, "j", "c")
+-- sys.taskInit(taskk, "k", "c")
+-- sys.taskInit(taskl, "l", "c")
 sys.taskInit(taskm, "m", "c")
 sys.taskInit(taskn, "n", "c")
