@@ -9,7 +9,12 @@ function taskb(v1, v2)
     print("taskb start", v1, v2)
     while true do
         print("taskb delay", count)
-        sys.wait(1000)
+        result, data = sys.waitUntil("SIM_IND", 5000)
+        if result then
+            print('receive SIM_IND')
+        else
+            print('wait SIM_IND timeout')
+        end
         count = count + 2
     end
 end
