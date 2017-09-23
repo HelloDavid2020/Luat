@@ -3,7 +3,7 @@
 -- @author 稀饭放姜
 -- @license MIT
 -- @copyright openLuat
--- @release 2017.09.13
+-- @release 2017.09.23 11:34
 module(..., package.seeall)
 
 require "pins"
@@ -22,7 +22,7 @@ local function taskWdt(rst, wd)
         -- 模块 ---> 看门狗 喂脉冲
         wd(0)
         print("AirM2M --> WATCHDOG >>>>>>\t", 'OK')
-        sys.wait(2000)        
+        sys.wait(2000)
         -- 看门狗 ---> 模块 喂脉冲
         for i = 1, 30 do
             if 0 ~= wd() then
