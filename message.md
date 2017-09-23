@@ -32,15 +32,18 @@
 
 ## net.lua
 - GSM 状态发生变化
-    - publish("NET_STATE_CHANGED", state)
+    - sys.publish("NET_STATE_CHANGED", state)
         - state 的值：
             > "UNREGISTER"   ：GSM 未注册
 
             > "REGISTERED"   ：GSM 已注册 
 - GSM 小区号发生变化
-    - publish("NET_CELL_CHANGED")
+    - sys.publish("NET_CELL_CHANGED")
 - GSM 有效小区号发布
-    - publish("CELL_INFO_IND", cellinfo)
+    - sys.publish("CELL_INFO_IND", cellinfo)
 - GSM 读取到信号质量
-    - publish("GSM_SIGNAL_REPORT_IND", success, rssi)
+    - sys.publish("GSM_SIGNAL_REPORT_IND", success, rssi)
 
+## pins.lua
+- GPIO 中断消息
+    - sys.publish("INT_GPIO_PRESS", pio.pin, "NEG")
