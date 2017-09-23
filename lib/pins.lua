@@ -50,15 +50,20 @@ end
 
 --- 自适应GPIO模式
 -- @param pin ，参数为pio.P0_1-31 和 pio_P1_1-31 (IO >= 32 and IO - 31)
--- @number val，初始默认电平：0 为低电平，非0为高电平
--- @string it, 中断IO的上升沿"POS" 或 下降沿"NEG"
+-- @number val，输出模式默认电平：0 是低电平1是高电平，中断模式0或“NEG”为下降沿，1或“POS”为上升沿。
+-- @string it, 中断标志“IT”为设置当前IO为中断IO
 -- @return function ,返回一个函数，该函数接受一个参数用来设置IO的电平
--- @usage key = setup(pio.P1_1,0,"NEG") ，配置Key为中断IO，下降沿触发中断。用key()获取电平值
--- @usage key() -- 获取当前中断IO的电平值
+-- @usage key = setup(pio.P1_1,0,"IT") ，配置Key的IO为pio.32,中断模式，下降沿触发。用key()获取当前电平
+-- @usage led = setup(pio.P1_1,0) ,配置LED脚的IO为pio.32，输出模式，默认输出低电平。led(1)即可输出高电平
+-- @usage key = setup(pio.P1_1),配置key的IO为pio.32，输入模式,用key()即可获得当前电平
 function setup(pin, val, it)
     if val ~= nil then
-        if it == "POS" or it == "NEG" then
-            addIt(pin, it)
+        if it == "IT" then
+            if val == "POS" or 1 then
+                addIt(pin, "POS")
+            elseif val == "NEG" or 0 then
+                addIt(pin, "NEG")
+            end
             return setIn(pin)
         else
             return setOut(pin, val)
