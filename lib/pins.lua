@@ -7,47 +7,20 @@
 module(..., package.seeall)
 local base = _G
 local assert = base.assert
+local print = base.print
 
 -- 中断IO列表
-local itPins = {}
+local InterrupPins = {}
 
 --- 添加中断IO函数
 -- @param pin ,参数为pio.P0_1-31 和 pio_P1_1-31 (IO >= 32 and IO - 31)
 -- @string rim ,参数为下降沿:"NEG" or 上升沿:"POS"
 -- @return 无
--- @usage addIt(pio.P1_1,"NEG") 配置IO为pio.32,中断模式，下降沿触发。中断会产生消息“INT_GPIO_TRIGGER”
-function addIt(pin, rim)
-    assert(pin ~= nil, "pins.addIt first param is nil !")
-    assert(pin == "POS" or rim == "NEG", "pins.addit last param is fail !")
-    table.insert(itPins, {pin, rim})
-end
-
---- 设置GPIO_xx为输入模式
--- @param pin ，参数为pio.P0_1-31 和 pio_P1_1-31 (IO >= 32 and IO - 31)
--- @return function ,返回一个函数，这个函数可以获取GPIO_xx的当前状态
--- @usage key = setIn(pio.P1_1) ，配置key的IO为pio.32，输入模式,用key()即可获得当前电平
-function setIn(pin)
-    assert(pin ~= nil, "pins.setIn first param is nil !")
-    pio.pin.close(pin)
-    pio.pin.setdir(pio.INPUT, pin)
-    return function()
-        return pio.pin.getval(pin)
-    end
-end
-
---- 设置GPIO_xx为输出模式
--- @param pin ，参数为pio.P0_1-31 和 pio_P1_1-31 (IO >= 32 and IO - 31)
--- @number val，初始默认电平：0 为低电平，非0为高电平
--- @return function ,返回一个函数，该函数接受一个参数用来设置IO的电平
--- @usage led = setOut(pio.P1_1,0) ，配置LED脚的IO为pio.32，输出模式，默认输出低电平。led(1)即可输出高电平
-function setOut(pin, val)
-    assert(pin ~= nil, "pins.setIn first param is nil !")
-    pio.pin.close(pin)
-    pio.pin.setdir(pio.OUTPUT, pin)
-    pio.pin.setval(val, pin)
-    return function(v)
-        pio.pin.setval(v, pin)
-    end
+-- @usage addInterrup(pio.P1_1,"NEG") 配置IO为pio.32,中断模式，下降沿触发。中断会产生消息“INT_GPIO_TRIGGER”
+function addInterrup(pin, rim)
+    assert(pin ~= nil, "pins.addInterrup first param is nil !")
+    assert(pin == "POS" or rim == "NEG", "pins.addInterrup last param is fail !")
+    table.insert(InterrupPins, {pin, rim})
 end
 
 --- 自适应GPIO模式
@@ -55,23 +28,41 @@ end
 -- @number val，输出模式默认电平：0 是低电平1是高电平，中断模式0或“NEG”为下降沿，1或“POS”为上升沿。
 -- @string it, 中断标志“IT”为设置当前IO为中断IO
 -- @return function ,返回一个函数，该函数接受一个参数用来设置IO的电平
--- @usage key = setup(pio.P1_1,0,"IT") ，配置Key的IO为pio.32,中断模式，下降沿触发。用key()获取当前电平
--- @usage led = setup(pio.P1_1,0) ,配置LED脚的IO为pio.32，输出模式，默认输出低电平。led(1)即可输出高电平
--- @usage key = setup(pio.P1_1),配置key的IO为pio.32，输入模式,用key()即可获得当前电平
+-- @usage key = pins.setup(pio.P1_1,0,"IT") ，配置Key的IO为pio.32,中断模式，下降沿触发。用key()获取当前电平
+-- @usage led = pins.setup(pio.P1_1,0) ,配置LED脚的IO为pio.32，输出模式，默认输出低电平。led(1)即可输出高电平
+-- @usage key = pins.setup(pio.P1_1),配置key的IO为pio.32，输入模式,用key()即可获得当前电平
 function setup(pin, val, it)
-    if val ~= nil then
-        if it == "IT" then
-            if val == "POS" or 1 then
-                addIt(pin, "POS")
-            elseif val == "NEG" or 0 then
-                addIt(pin, "NEG")
-            end
-            return setIn(pin)
-        else
-            return setOut(pin, val)
+    -- 关闭该IO
+    pio.pin.close(pin)
+    -- 中断模式配置
+    if it == "IT" then
+        if val == "POS" or 1 then
+            addInterrup(pin, "POS")
+        elseif val == "NEG" or 0 then
+            addInterrup(pin, "NEG")
         end
+    end
+    -- 输出模式初始化默认配置
+    if val ~= nil then
+        pio.pin.setdir(pio.OUTPUT, pin)
+        pio.pin.setval(val, pin)
+    -- 输入模式初始化默认配置
     else
-        return setIn(pin)
+        pio.pin.setdir(pio.INPUT, pin)
+    end
+    -- 返回一个自动切换输入输出模式的函数
+    return function(val)
+        pio.pin.close(pin)
+        if val ~= nil then
+            pio.pin.setdir(pio.OUTPUT, pin)
+            pio.pin.setval(val, pin)
+            -- print("pins.setup is output1 model\t pio.p_", pin)
+            pio.pin.setval(val, pin)
+        else
+            pio.pin.setdir(pio.INPUT, pin)
+            -- print("pins.setup is input1 model\t pio.p_", pin)
+            return pio.pin.getval(pin)
+        end
     end
 end
 
@@ -87,7 +78,7 @@ local function intmsg(msg)
     
     if msg.int_id == cpu.INT_GPIO_POSEDGE then status = "POS" end
     
-    for _, v in ipairs(itPins) do
+    for _, v in ipairs(InterrupPins) do
         if v[1] == msg.int_resnum and v[2] == status then
             sys.publish("INT_GPIO_TRIGGER", v[1], v[2])
             return

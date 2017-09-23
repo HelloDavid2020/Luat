@@ -3,10 +3,10 @@
 -- @author smset,稀饭放姜
 -- @license MIT
 -- @copyright openLuat
--- @release 2017.09.13
+-- @release 2017.09.23 11:34
 module(..., package.seeall)
 
-local pio = require "pio"
+local pins = require "pins"
 local sys = require "sys"
 require "patch"
 local base = _G
@@ -98,9 +98,9 @@ end
 -- 返回：无
 --]]
 local function blinkPwm(ledPin, light, dark)
-    pio.pin.setval(1, ledPin)
+    ledPin(1)
     sys.wait(light)
-    pio.pin.setval(0, ledPin)
+    ledPin(0)
     sys.wait(dark)
 end
 
@@ -111,7 +111,7 @@ end
 local function netLink(ledPin)
     --while true do
     if netLinkSta == "sleep" then
-        pio.pin.setval(0, ledPin)
+        ledPin(0)
     elseif netLinkSta == "sign" then
         blinkPwm(ledPin, 500, 500)
     elseif netLinkSta == "hold" then
@@ -119,7 +119,7 @@ local function netLink(ledPin)
     elseif netLinkSta == "active" then
         blinkPwm(ledPin, 100, 100)
     end
-    --print("led.netlink is running!")
+--print("led.netlink is running!")
 --end
 end
 
@@ -146,26 +146,26 @@ local function breateLed(ledPin)
     --while true do
     if bLighting then
         for i = 1, LED_PWM - 1 do
-            pio.pin.setval(0, ledPin)
+            ledPin(0)
             sys.wait(i)
-            pio.pin.setval(1, ledPin)
+            ledPin(1)
             sys.wait(LED_PWM - i)
         end
         bLighting = false
         bDarking = true
-        pio.pin.setval(0, ledPin)
+        ledPin(0)
         sys.wait(700)
     end
     if bDarking then
         for i = 1, LED_PWM - 1 do
-            pio.pin.setval(0, ledPin)
+            ledPin(0)
             sys.wait(LED_PWM - i)
-            pio.pin.setval(1, ledPin)
+            ledPin(1)
             sys.wait(i)
         end
         bLighting = true
         bDarking = false
-        pio.pin.setval(1, ledPin)
+        ledPin(1)
         sys.wait(700)
     end
 --end
@@ -183,10 +183,8 @@ local function taskLed(ledPin)
                 netLink(ledPin)
             elseif staLed == "batt" then
                 battLevel(ledPin)
-            --print("led.battLevel is runing!")
             elseif staLed == "breate" then
                 breateLed(ledPin)
-            --print("led.breateLed is runing!")
             end
         end
         sys.wait(100)
@@ -198,8 +196,5 @@ end
 -- @return 无
 -- @usage setup(pio.P0_28)
 function setup(ledPin)
-    LED_PIN = ledPin or LED_PIN
-    pio.pin.setdir(pio.OUTPUT, LED_PIN)
-    pio.pin.setval(0, LED_PIN)
-    sys.taskInit(taskLed, LED_PIN)
+    sys.taskInit(taskLed, pins.setup(ledPin or LED_PIN, 0))
 end

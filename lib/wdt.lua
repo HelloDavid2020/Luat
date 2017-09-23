@@ -6,12 +6,7 @@
 -- @release 2017.09.13
 module(..., package.seeall)
 
-local pio = require "pio"
-
--- 模块复位看门狗引脚配置
-local RST_SCMWD_PIN = pio.P0_31
--- 模块喂狗引脚配置
-local WATCHDOG_PIN = pio.P0_29
+require "pins"
 
 --[[模块和看门狗互喂任务
 -- @return 无
@@ -20,32 +15,27 @@ local WATCHDOG_PIN = pio.P0_29
 --]]
 local function taskWdt(rst, wd)
     -- 初始化喂狗引脚电平(初始高电平，喂狗拉低2秒)
-    pio.pin.setdir(pio.OUTPUT, rst)
-    pio.pin.setval(1, rst)
-    
+    rst(1)
+    wd(1)
     -- 模块<--->看门狗  相互循环喂脉冲
     while true do
         -- 模块 ---> 看门狗 喂脉冲
-        pio.pin.close(wd)
-        pio.pin.setdir(pio.OUTPUT, wd)
-        pio.pin.setval(0, wd)
-        print("Air800 --> WATCHDOG >>>>>>", 'OK')
-        sys.wait(2000)
-        
+        wd(0)
+        print("AirM2M --> WATCHDOG >>>>>>\t", 'OK')
+        sys.wait(2000)        
         -- 看门狗 ---> 模块 喂脉冲
-        pio.pin.close(wd)
-        pio.pin.setdir(pio.INPUT, wd)
         for i = 1, 30 do
-            if 0 ~= pio.pin.getval(wd) then
+            if 0 ~= wd() then
                 sys.wait(100)
             else
-                print("WatchDog --> Air800 >>>>>>", 'OK')
+                print("AirM2M <-- WatchDog <<<<<<\t", 'OK')
                 break
             end
-            -- 狗饿死了
+            -- 狗死了
             if 30 == i then
-                pio.pin.setval(0, rst)
-                print("The WatchDog --> Air800 didn't respond >>>>>>", "wdt reset 153b")
+                -- 复位狗
+                rst(0)
+                print("The WatchDog <--> AirM2M didn't respond:\t", "wdt reset 153b")
                 sys.wait(100)
             end
         end
@@ -60,7 +50,5 @@ end
 -- @return 无
 -- @usage setup(pio.P0_31,pio.P0_29)
 function setup(rst, wd)
-    RST_SCMWD_PIN = rst or RST_SCMWD_PIN
-    WATCHDOG_PIN = wd or WATCHDOG_PIN
-    sys.taskInit(taskWdt, RST_SCMWD_PIN, WATCHDOG_PIN)
+    sys.taskInit(taskWdt, pins.setup(rst, 0), pins.setup(wd, 0))
 end
