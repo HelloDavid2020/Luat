@@ -12,6 +12,10 @@ local assert = base.assert
 local itPins = {}
 
 --- 添加中断IO函数
+-- @param pin ,参数为pio.P0_1-31 和 pio_P1_1-31 (IO >= 32 and IO - 31)
+-- @string rim ,参数为下降沿:"NEG" or 上升沿:"POS"
+-- @return 无
+-- @usage addIt(pio.P1_1,"NEG") 配置IO为pio.32,中断模式，下降沿触发。中断会产生消息“INT_GPIO_TRIGGER”
 function addIt(pin, rim)
     assert(pin ~= nil, "pins.addIt first param is nil !")
     assert(pin == "POS" or rim == "NEG", "pins.addit last param is fail !")
@@ -21,8 +25,7 @@ end
 --- 设置GPIO_xx为输入模式
 -- @param pin ，参数为pio.P0_1-31 和 pio_P1_1-31 (IO >= 32 and IO - 31)
 -- @return function ,返回一个函数，这个函数可以获取GPIO_xx的当前状态
--- @usage key = setIn(pio.P1_1) ，表示设置编号32的IO为输入模式，别名key()。
--- @usage local ledStatus = key()
+-- @usage key = setIn(pio.P1_1) ，配置key的IO为pio.32，输入模式,用key()即可获得当前电平
 function setIn(pin)
     assert(pin ~= nil, "pins.setIn first param is nil !")
     pio.pin.close(pin)
@@ -36,8 +39,7 @@ end
 -- @param pin ，参数为pio.P0_1-31 和 pio_P1_1-31 (IO >= 32 and IO - 31)
 -- @number val，初始默认电平：0 为低电平，非0为高电平
 -- @return function ,返回一个函数，该函数接受一个参数用来设置IO的电平
--- @usage led = setOut(pio.P1_1,0) ，表示设置编号32的IO为输出模式，别名led()，默认输出低电平。
--- @usage led(1) -- 设置led输出高电平
+-- @usage led = setOut(pio.P1_1,0) ，配置LED脚的IO为pio.32，输出模式，默认输出低电平。led(1)即可输出高电平
 function setOut(pin, val)
     assert(pin ~= nil, "pins.setIn first param is nil !")
     pio.pin.close(pin)
@@ -87,7 +89,7 @@ local function intmsg(msg)
     
     for _, v in ipairs(itPins) do
         if v[1] == msg.int_resnum and v[2] == status then
-            sys.publish("INT_GPIO_PRESS", v[1], v[2])
+            sys.publish("INT_GPIO_TRIGGER", v[1], v[2])
             return
         end
     end
