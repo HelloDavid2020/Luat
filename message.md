@@ -46,4 +46,4 @@
 
 ## pins.lua
 - GPIO 中断消息
-    - sys.publish("INT_GPIO_PRESS", pio.pin, "NEG")
+    - sys.publish("INT_GPIO_TRIGGER", pio.pin, "NEG")
