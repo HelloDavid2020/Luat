@@ -3,7 +3,7 @@
 -- @author 稀饭放姜
 -- @license MIT
 -- @copyright openLuat
--- @release 2017.09.22
+-- @release 2017.09.23 11:34
 module(..., package.seeall)
 local base = _G
 local assert = base.assert
